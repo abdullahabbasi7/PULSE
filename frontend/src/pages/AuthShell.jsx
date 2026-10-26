@@ -1,10 +1,24 @@
 import { KashiTiles } from '../components/KashiTiles.jsx'
 import { PulseMark } from '../layout/icons.jsx'
 
+// What the whole platform does, grouped from the 12 modules in the proposal.
 const HIGHLIGHTS = [
-  { title: 'Bookings that read themselves', text: 'AI reads a client message and fills in the event details.' },
-  { title: 'Every plate accounted for', text: 'QR-tracked crockery, with quantities predicted for each event.' },
-  { title: 'Attendance by face', text: 'Staff check in at the venue with a glance at the camera.' },
+  {
+    title: 'Bookings, quotations and the live event board',
+    text: 'Smart booking, menu recommendations and instant quotes, with every event of the day on one board.',
+  },
+  {
+    title: 'Kitchen, inventory and fleet',
+    text: 'Deep-learning demand forecasts, QR-tracked crockery and optimised delivery routes.',
+  },
+  {
+    title: 'Staff, resources and finance',
+    text: 'Face-recognition attendance, automatic resource allocation and an OCR ledger that flags unusual spending.',
+  },
+  {
+    title: 'Clients and growth',
+    text: 'An AI event concierge, generative decor designs, marketing automation and an owner command dashboard.',
+  },
 ]
 
 // The project name, with the letters that spell PULSE picked out.
@@ -34,14 +48,14 @@ export function AuthShell({ title, subtitle, children, footer }) {
         {/* Clear porcelain behind the text so it stays easy to read. */}
         <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(246,247,251,0.97)_30%,rgba(246,247,251,0.55)_62%,rgba(246,247,251,0)_90%)]" />
 
-        <div className="relative flex h-full flex-col justify-between p-12 xl:p-16">
+        <div className="relative flex h-full min-h-screen flex-col justify-between gap-10 p-12 xl:p-16 [@media(max-height:800px)]:py-9">
           <div className="flex items-center gap-2.5 text-brand-600">
             <PulseMark className="h-10 w-10" />
             <span className="font-display text-2xl tracking-wide text-ink-900">PULSE</span>
           </div>
 
           <div className="max-w-xl animate-page-in [animation-delay:500ms]">
-            <h2 className="font-display text-[2.5rem] leading-[1.1] text-ink-900 xl:text-[2.9rem]">
+            <h2 className="font-display text-[2.5rem] leading-[1.1] text-ink-900 xl:text-[2.9rem] [@media(max-height:800px)]:text-[2.25rem]">
               {NAME.map(([initial, rest]) => (
                 <span key={rest} className="mr-[0.25em] inline-block">
                   {initial && <span className="text-brand-600">{initial}</span>}
@@ -50,7 +64,7 @@ export function AuthShell({ title, subtitle, children, footer }) {
               ))}
             </h2>
             <p className="mt-4 text-lg font-medium text-brand-800">An AI-Driven Management Platform for Catering Enterprises</p>
-            <ul className="mt-10 space-y-5">
+            <ul className="mt-9 space-y-4 [@media(max-height:800px)]:mt-7 [@media(max-height:800px)]:space-y-3">
               {HIGHLIGHTS.map((item) => (
                 <li key={item.title} className="flex gap-3.5">
                   <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-kashi-500 text-white">
