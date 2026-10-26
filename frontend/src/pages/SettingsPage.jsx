@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
-import { Alert, Button, Card, Field, PageHeader } from '../components/ui/index.js'
+import { Button, Card, Field, PageHeader, StepperField, useToast } from '../components/ui/index.js'
 import { api, errorText } from '../lib/api.js'
 
 function fromCompany(company) {
@@ -13,19 +13,32 @@ function fromCompany(company) {
   }
 }
 
+function Section({ title, description, children }) {
+  return (
+    <div className="grid gap-6 py-8 md:grid-cols-[14rem_minmax(0,1fr)]">
+      <div>
+        <h2 className="text-[0.95rem] font-semibold text-ink-900">{title}</h2>
+        <p className="mt-1 text-sm leading-relaxed text-ink-500">{description}</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">{children}</div>
+    </div>
+  )
+}
+
 export function SettingsPage() {
   const { company, setCompany } = useAuth()
-  const [form, setForm] = useState(() => fromCompany(company))
-  const [message, setMessage] = useState({ tone: 'success', text: '' })
+  const toast = useToast()
+  const [saved, setSaved] = useState(() => fromCompany(company))
+  const [form, setForm] = useState(saved)
   const [busy, setBusy] = useState(false)
   const update = (key) => (event) => setForm({ ...form, [key]: event.target.value })
+  const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(saved), [form, saved])
 
   async function submit(event) {
     event.preventDefault()
-    setMessage({ tone: 'success', text: '' })
     setBusy(true)
     try {
-      const saved = await api('/companies/me', {
+      const result = await api('/companies/me', {
         method: 'PATCH',
         body: {
           name: form.name.trim(),
@@ -35,11 +48,13 @@ export function SettingsPage() {
           daily_event_capacity: Number(form.daily_event_capacity),
         },
       })
-      setCompany(saved)
-      setForm(fromCompany(saved))
-      setMessage({ tone: 'success', text: 'Settings saved.' })
+      setCompany(result)
+      const next = fromCompany(result)
+      setSaved(next)
+      setForm(next)
+      toast('Settings saved')
     } catch (err) {
-      setMessage({ tone: 'danger', text: errorText(err) })
+      toast(errorText(err), 'danger')
     } finally {
       setBusy(false)
     }
@@ -47,33 +62,43 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Company settings" description="Details shown across your workspace and used by the booking module." />
-      <Card>
-        <form className="grid gap-4 md:grid-cols-2" onSubmit={submit} noValidate>
-          <Field id="company_name" label="Company name" required value={form.name} onChange={update('name')} className="md:col-span-2" />
-          <Field id="company_phone" label="Phone" type="tel" value={form.phone} onChange={update('phone')} />
-          <Field id="company_city" label="City" value={form.city} onChange={update('city')} />
-          <Field id="company_address" label="Address" value={form.address} onChange={update('address')} className="md:col-span-2" />
-          <Field
-            id="daily_capacity"
-            label="Events per day"
-            type="number"
-            min="1"
-            max="100"
-            hint="Bookings (M1) warn when a date reaches this limit."
-            value={form.daily_event_capacity}
-            onChange={update('daily_event_capacity')}
-          />
-          <div className="md:col-span-2">
-            <Alert tone={message.tone}>{message.text}</Alert>
+      <PageHeader title="Company settings" description="These details appear across your workspace and on documents you send to clients." />
+      <form onSubmit={submit} noValidate>
+        <Card bodyClassName="divide-y divide-ink-100 px-5 sm:px-8">
+          <Section title="Company profile" description="Shown in the sidebar and on client documents.">
+            <Field id="company_name" label="Company name" required value={form.name} onChange={update('name')} className="sm:col-span-2" />
+            <Field id="company_phone" label="Phone" type="tel" value={form.phone} onChange={update('phone')} />
+            <Field id="company_city" label="City" value={form.city} onChange={update('city')} />
+            <Field id="company_address" label="Address" value={form.address} onChange={update('address')} className="sm:col-span-2" />
+          </Section>
+          <Section title="Event capacity" description="How many events your kitchen and crew can handle on one day.">
+            <StepperField
+              id="daily_capacity"
+              label="Events per day"
+              hint="Bookings warn you when a date reaches this number."
+              value={form.daily_event_capacity}
+              onChange={(value) => setForm({ ...form, daily_event_capacity: value })}
+            />
+          </Section>
+        </Card>
+
+        {/* Save bar rises into view only when something has changed. */}
+        {dirty && (
+          <div className="sticky bottom-4 z-20 mt-6 animate-rise-in">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-ink-900 px-5 py-3 text-white shadow-pop">
+              <p className="text-sm">You have unsaved changes.</p>
+              <div className="flex gap-2">
+                <Button variant="ghost" className="!text-white hover:!bg-white/10" onClick={() => setForm(saved)}>
+                  Discard
+                </Button>
+                <Button type="submit" loading={busy} className="!bg-white !text-ink-900 !shadow-none hover:!bg-brand-50">
+                  Save changes
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="md:col-span-2">
-            <Button type="submit" loading={busy}>
-              Save changes
-            </Button>
-          </div>
-        </form>
-      </Card>
+        )}
+      </form>
     </>
   )
 }

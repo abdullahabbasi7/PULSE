@@ -33,19 +33,19 @@ export function LoginPage() {
 
   return (
     <AuthShell
-      title="Sign in"
-      subtitle="Use the account your company gave you."
+      title="Welcome back"
+      subtitle="Sign in with the email your company registered for you."
       footer={
         <>
-          New company?{' '}
-          <Link to="/signup" className="font-medium text-brand-700 hover:underline">
+          Setting up PULSE for a new company?{' '}
+          <Link to="/signup" className="font-semibold text-brand-700 underline-offset-4 transition-colors hover:text-brand-800 hover:underline">
             Create a workspace
           </Link>
         </>
       }
     >
-      <form className="space-y-4" onSubmit={submit} noValidate>
-        <Field id="email" label="Email" type="email" autoComplete="email" required value={form.email} onChange={update('email')} />
+      <form className="space-y-5" onSubmit={submit} noValidate>
+        <Field id="email" label="Email" type="email" autoComplete="email" placeholder="you@company.pk" required value={form.email} onChange={update('email')} />
         <Field
           id="password"
           label="Password"
@@ -55,8 +55,8 @@ export function LoginPage() {
           value={form.password}
           onChange={update('password')}
         />
-        <Alert>{error}</Alert>
-        <Button type="submit" className="w-full" loading={busy}>
+        <Alert key={error}>{error}</Alert>
+        <Button type="submit" size="lg" className="w-full" loading={busy}>
           Sign in
         </Button>
       </form>

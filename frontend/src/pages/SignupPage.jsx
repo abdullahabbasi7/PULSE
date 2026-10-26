@@ -7,6 +7,15 @@ import { AuthShell } from './AuthShell.jsx'
 
 const EMPTY = { company_name: '', city: '', phone: '', owner_name: '', email: '', password: '' }
 
+function Group({ title, children }) {
+  return (
+    <fieldset className="space-y-4">
+      <legend className="mb-4 text-sm font-semibold text-ink-900">{title}</legend>
+      {children}
+    </fieldset>
+  )
+}
+
 export function SignupPage() {
   const { status, signup } = useAuth()
   const navigate = useNavigate()
@@ -45,39 +54,45 @@ export function SignupPage() {
 
   return (
     <AuthShell
-      title="Create your company workspace"
-      subtitle="You become the owner and can add your team afterwards."
+      title="Create your workspace"
+      subtitle="Your company gets its own private PULSE. You'll be the owner and can invite your team next."
       footer={
         <>
-          Already registered?{' '}
-          <Link to="/login" className="font-medium text-brand-700 hover:underline">
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold text-brand-700 underline-offset-4 transition-colors hover:text-brand-800 hover:underline">
             Sign in
           </Link>
         </>
       }
     >
-      <form className="space-y-4" onSubmit={submit} noValidate>
-        <Field id="company_name" label="Company name" required value={form.company_name} onChange={update('company_name')} />
-        <div className="grid grid-cols-2 gap-3">
-          <Field id="city" label="City" value={form.city} onChange={update('city')} />
-          <Field id="phone" label="Phone" type="tel" value={form.phone} onChange={update('phone')} />
+      <form className="space-y-8" onSubmit={submit} noValidate>
+        <Group title="Your company">
+          <Field id="company_name" label="Company name" placeholder="e.g. Royal Caterers" required value={form.company_name} onChange={update('company_name')} />
+          <div className="grid grid-cols-2 gap-3">
+            <Field id="city" label="City" placeholder="Islamabad" value={form.city} onChange={update('city')} />
+            <Field id="phone" label="Phone" type="tel" placeholder="051-1234567" value={form.phone} onChange={update('phone')} />
+          </div>
+        </Group>
+        <Group title="Your owner account">
+          <Field id="owner_name" label="Full name" autoComplete="name" required value={form.owner_name} onChange={update('owner_name')} />
+          <Field id="email" label="Email" type="email" autoComplete="email" required value={form.email} onChange={update('email')} />
+          <Field
+            id="password"
+            label="Password"
+            type="password"
+            autoComplete="new-password"
+            hint="At least 8 characters."
+            required
+            value={form.password}
+            onChange={update('password')}
+          />
+        </Group>
+        <div className="space-y-4">
+          <Alert key={error}>{error}</Alert>
+          <Button type="submit" size="lg" className="w-full" loading={busy}>
+            Create workspace
+          </Button>
         </div>
-        <Field id="owner_name" label="Your name" autoComplete="name" required value={form.owner_name} onChange={update('owner_name')} />
-        <Field id="email" label="Email" type="email" autoComplete="email" required value={form.email} onChange={update('email')} />
-        <Field
-          id="password"
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          hint="At least 8 characters."
-          required
-          value={form.password}
-          onChange={update('password')}
-        />
-        <Alert>{error}</Alert>
-        <Button type="submit" className="w-full" loading={busy}>
-          Create workspace
-        </Button>
       </form>
     </AuthShell>
   )

@@ -137,6 +137,15 @@ frontend/
 db/init/           creates the pulse_app database role
 ```
 
+## Look and feel
+
+The theme comes from Multani blue pottery: porcelain white, cobalt glaze (`brand-*`), kashi turquoise (`kashi-*`) and saffron (`saffron-*`). Headings use **Marcellus** and body text uses **Figtree**. The colours, shadows and animations live in `frontend/tailwind.config.js`.
+
+To keep the three modules looking like one product, build your screens from `frontend/src/components/ui`:
+`Button`, `Field`, `SelectField`, `StepperField`, `Card`, `PageHeader`, `Badge`, `Alert`, `Avatar`, `Skeleton`, `EmptyState`, plus `useToast()` for confirmations. Use `toast('Booking saved')` after a successful action.
+
+Motion follows one rule: animate in response to what the user does (opening, saving, navigating). Everything is switched off automatically for people who turn on "reduce motion" in their system settings.
+
 ## Roles
 
 | Page | Owner | Manager | Staff | Driver | Accounts |
