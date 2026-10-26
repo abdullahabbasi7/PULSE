@@ -19,22 +19,22 @@ function WelcomeBanner({ firstName, company }) {
   const now = new Date()
   const today = now.toLocaleDateString('en-PK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   return (
-    <section className="relative overflow-hidden rounded-[1.75rem] bg-brand-700 px-6 py-8 text-white shadow-lift sm:px-10 sm:py-10">
+    <section className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-brand-100 via-brand-50 to-kashi-50 px-6 py-8 text-ink-900 shadow-glaze ring-1 ring-brand-100 sm:px-10 sm:py-10">
       <KashiTiles
         cols={7}
         rows={4}
         className="absolute -right-24 top-0 h-full w-[34rem] opacity-90 [mask-image:linear-gradient(to_left,black_30%,transparent)]"
-        starClass="stroke-white/30"
-        accentClass="stroke-kashi-300"
-        diamondClass="stroke-white/15"
+        starClass="stroke-brand-300/80"
+        accentClass="stroke-kashi-400"
+        diamondClass="stroke-brand-200"
       />
       <div className="relative max-w-xl">
-        <p className="text-sm text-brand-100/80">{today}</p>
+        <p className="text-sm font-medium text-brand-700">{today}</p>
         <h1 className="mt-2 font-display text-[2.1rem] leading-tight sm:text-[2.6rem]">
           {greeting(now)}, {firstName}
         </h1>
-        <p className="mt-3 text-[0.95rem] leading-relaxed text-brand-100/90">
-          {company.name} can run up to <span className="tabular font-semibold text-white">{company.daily_event_capacity}</span> events a
+        <p className="mt-3 text-[0.95rem] leading-relaxed text-ink-600">
+          {company.name} can run up to <span className="tabular font-semibold text-ink-900">{company.daily_event_capacity}</span> events a
           day. Bookings, stock and staff for each one will come together here.
         </p>
       </div>
