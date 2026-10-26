@@ -34,8 +34,7 @@ function WelcomeBanner({ firstName, company }) {
           {greeting(now)}, {firstName}
         </h1>
         <p className="mt-3 text-[0.95rem] leading-relaxed text-ink-600">
-          {company.name} can run up to <span className="tabular font-semibold text-ink-900">{company.daily_event_capacity}</span> events a
-          day. Bookings, stock and staff for each one will come together here.
+          Bookings, stock and staff for every {company.name} event come together here.
         </p>
       </div>
     </section>
@@ -143,7 +142,7 @@ function SetupChecklist({ company, teamSize }) {
 
 function WorkspaceFacts({ company, teamSize, role }) {
   const facts = [
-    { label: 'Events per day', value: company.daily_event_capacity },
+    { label: 'City', value: company.city || 'Not set' },
     { label: 'Team members', value: teamSize },
     { label: 'Your role', value: role },
   ]

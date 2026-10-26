@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, Text
+from sqlalchemy import Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, IdMixin
@@ -14,4 +14,3 @@ class Company(IdMixin, Base):
     address: Mapped[str | None] = mapped_column(Text)
     city: Mapped[str | None] = mapped_column(Text)
     logo_url: Mapped[str | None] = mapped_column(Text)
-    daily_event_capacity: Mapped[int] = mapped_column(Integer, nullable=False, default=4)

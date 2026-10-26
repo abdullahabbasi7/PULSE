@@ -13,7 +13,6 @@ class CompanyOut(BaseModel):
     address: str | None
     city: str | None
     logo_url: str | None
-    daily_event_capacity: int
     created_at: datetime
 
 
@@ -23,4 +22,3 @@ class CompanyUpdate(BaseModel):
     address: str | None = Field(default=None, max_length=300)
     city: str | None = Field(default=None, max_length=80)
     logo_url: str | None = Field(default=None, max_length=500)
-    daily_event_capacity: int | None = Field(default=None, ge=1, le=100)

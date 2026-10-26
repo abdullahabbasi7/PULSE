@@ -8,7 +8,7 @@ export const MODULES = {
     owner: 'Abdullah Iftikhar Abbasi',
     glaze: 'brand',
     icon: 'calendar',
-    summary: 'Take bookings, check date capacity and follow each event live on the day.',
+    summary: 'Take bookings, see every event on the calendar and follow each one live on the day.',
     ai: {
       name: 'Smart inquiry reader',
       text: 'Paste a WhatsApp inquiry in English or Roman Urdu and the booking form fills itself: date, venue, guests, menu and event type.',
@@ -16,7 +16,7 @@ export const MODULES = {
     },
     features: [
       'Client records and booking form (date, venue, guests, menu, package)',
-      'Calendar with a warning when a date reaches its capacity',
+      'Calendar of upcoming events, with clashes for staff and venue flagged',
       'Booking status from inquiry to confirmed, in progress and completed',
       "Live event board for everything happening today",
     ],

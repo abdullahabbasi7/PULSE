@@ -69,7 +69,7 @@ export function SelectField({ id, label, options, hint, className = '', ...selec
   )
 }
 
-// Number input with − and + buttons, for small counts like events per day.
+// Number input with − and + buttons, for small counts like guests per table.
 export function StepperField({ id, label, hint, value, onChange, min = 1, max = 100 }) {
   const number = Number(value) || min
   const set = (next) => onChange(String(Math.min(max, Math.max(min, next))))
