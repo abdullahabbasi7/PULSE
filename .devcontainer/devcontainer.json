@@ -1,0 +1,16 @@
+{
+  // GitHub Codespaces: runs PULSE in the cloud, so nothing is installed on your laptop.
+  // Open the repo on GitHub → Code → Codespaces → Create codespace on main,
+  // then run:  docker compose up --build
+  "name": "PULSE",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [5173, 8000],
+  "portsAttributes": {
+    "5173": { "label": "PULSE app", "onAutoForward": "openBrowser" },
+    "8000": { "label": "PULSE API", "onAutoForward": "silent" }
+  },
+  "hostRequirements": { "cpus": 2, "memory": "8gb" }
+}
