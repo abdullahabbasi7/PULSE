@@ -2,7 +2,7 @@
 
 **Predictive Unified Logistics for Smart Events** is an AI-driven management platform for catering and event companies.
 
-PULSE is a multi-tenant web app. Any catering or event management company can sign up and get its own private workspace. Naveed Event Management (NEM) is the pilot company.
+PULSE is a multi-tenant web app for catering and event companies in any city or country. Each company signs up and gets its own private workspace, with its own staff, time zone and data.
 
 Final Year Project, BS Artificial Intelligence, SZABIST Islamabad. Supervisor: Mr. Hamza Imran.
 
@@ -23,7 +23,8 @@ All three members share the platform base: sign-up, login, roles, team accounts 
 | Frontend | React 18, Vite 5, React Router 6, Tailwind CSS 3 |
 | Backend | Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic 2 |
 | Database | PostgreSQL 16 with row-level security, one database shared by every company |
-| Auth | JWT access and refresh tokens; passwords hashed with scrypt |
+| Auth | Sign in with email or mobile number; strong-password policy; lockout after 5 failed attempts; JWT access and refresh tokens; scrypt hashes |
+| AI | scikit-learn (inquiry reader, equipment predictor), OpenCV YuNet + SFace (face check-in) |
 
 ## Run it
 
@@ -39,6 +40,10 @@ docker compose up --build
 
 - App: http://localhost:5173
 - API docs (Swagger): http://localhost:8000/docs
+
+The first start trains the two scikit-learn models (about 40 seconds); later starts load them from `backend/.models/`.
+
+If you ran an older version before, wipe the old demo data first: `docker compose down -v`.
 
 Load the demo companies and users (run once, in a second terminal):
 
@@ -82,19 +87,23 @@ You need Python 3.12, Node 22 and PostgreSQL 16.
 
 ### Demo accounts
 
-These accounts are created by `seed_demo`. Every one has the password **`Demo@12345`**.
+These accounts are created by `seed_demo`. They are fictional companies. Every one has the password **`Pulse@Demo2026`**, and you can sign in with the **email or the mobile number**.
 
-| Company | Email | Role |
-|---|---|---|
-| Naveed Event Management (Pilot) | owner@nem-demo.pk | Owner |
-| | manager@nem-demo.pk | Manager |
-| | staff@nem-demo.pk | Staff |
-| | driver@nem-demo.pk | Driver |
-| | accounts@nem-demo.pk | Accounts |
-| Sample Caterers Lahore | owner@sample-caterers.pk | Owner |
-| | manager@sample-caterers.pk | Manager |
+| Company | Email | Mobile | Role |
+|---|---|---|---|
+| Royal Caterers (Demo), Islamabad | owner@royal-demo.pk | 0300 0000001 | Owner |
+| | manager@royal-demo.pk | 0300 0000002 | Manager |
+| | staff@royal-demo.pk | 0300 0000003 | Staff |
+| | driver@royal-demo.pk | 0300 0000004 | Driver |
+| | accounts@royal-demo.pk | 0300 0000005 | Accounts |
+| Crescent Events (Demo), Dubai | owner@crescent-demo.ae | +971 50 000 0001 | Owner |
+| | manager@crescent-demo.ae | +971 50 000 0002 | Manager |
 
-Log in as both owners to show the defense panel that one company can never see another company's data.
+Royal Caterers comes with clients, bookings (two today, one live), stock and staff. Sign in to both companies to show that one company can never see another company's data.
+
+### Camera features
+
+QR scanning and face check-in use the webcam. Browsers only allow the camera on `https://` or on `http://localhost`, so open the app on localhost or through the Codespaces https address. Faces must be registered first (Staff & Attendance → Staff → Register face), and only for staff whose consent is recorded.
 
 ### Tests
 
@@ -106,6 +115,22 @@ pytest
 ```
 
 ---
+
+## Sign-in security
+
+- Accounts are created by a company's owner or manager. Only a new company's owner signs up publicly.
+- Sign in with the registered email or mobile number (any format: `0300 1234567`, `+92 300 1234567`, `+971…`). Numbers are stored in international format, so each mobile number belongs to one account.
+- Passwords must be at least 10 characters with upper and lower case letters, a number and a symbol; no common words, no repeated or sequential runs, and nothing from the person's name or email. The same rules run in the browser (live checklist) and on the server.
+- After 5 wrong passwords the account is locked for 15 minutes. An owner or manager can reset a member's password, which also unlocks it.
+- Changing a password signs out every other device.
+
+## AI in each module
+
+| Module | Feature | Technique | Result on held-out tests |
+|---|---|---|---|
+| M1 | Inquiry reader: reads a WhatsApp or email inquiry (English or Roman Urdu) and fills the booking form | TF-IDF + logistic regression for event type; MaxEnt BIO tagger for date, time, guests, venue and dishes | 98.6% of fields correct on 20 hand-written messages; event type 100%, entity F1 0.997 on synthetic test set |
+| M2 | Equipment predictor: how many plates, glasses, chafing dishes and so on to send | Gradient-boosted regression per category, trained on simulated past events | 5.9% weighted error against 31.2% for the usual rule of thumb (81% lower) |
+| M3 | Face check-in with anti-spoofing | YuNet face detector, SFace embeddings (cosine match), head-turn liveness challenge | A still photo or screen fails the liveness check; only embeddings are stored, never photos |
 
 ## Project layout
 

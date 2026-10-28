@@ -33,8 +33,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback(
-    async (email, password) => {
-      const tokens = await api('/auth/login', { method: 'POST', body: { email, password }, auth: false })
+    async (identifier, password) => {
+      const tokens = await api('/auth/login', { method: 'POST', body: { identifier, password }, auth: false })
       setTokens(tokens)
       await loadMe()
     },
@@ -57,9 +57,12 @@ export function AuthProvider({ children }) {
 
   const setCompany = useCallback((company) => setState((current) => ({ ...current, company })), [])
 
+  // After a password change the server issues new tokens; older sessions stop working.
+  const replaceTokens = useCallback((tokens) => setTokens(tokens), [])
+
   const value = useMemo(
-    () => ({ ...state, login, signup, logout, reload: loadMe, setCompany }),
-    [state, login, signup, logout, loadMe, setCompany],
+    () => ({ ...state, login, signup, logout, reload: loadMe, setCompany, replaceTokens }),
+    [state, login, signup, logout, loadMe, setCompany, replaceTokens],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

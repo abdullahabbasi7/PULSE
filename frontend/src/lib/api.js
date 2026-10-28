@@ -105,3 +105,23 @@ export async function api(path, { method = 'GET', body, auth = true, retry = tru
   if (!response.ok) throw new ApiError(response.status, messageFrom(data), data)
   return data
 }
+
+// Downloads a file (such as a CSV report) from an authenticated endpoint.
+export async function apiDownload(path, filename) {
+  const tokens = getTokens()
+  const response = await fetch(`${BASE}${path}`, {
+    headers: tokens?.access_token ? { Authorization: `Bearer ${tokens.access_token}` } : {},
+  })
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    throw new ApiError(response.status, messageFrom(data), data)
+  }
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}

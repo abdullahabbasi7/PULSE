@@ -2,15 +2,15 @@ import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { Alert, Button, Field } from '../components/ui/index.js'
-import { errorText } from '../lib/api.js'
+import { ApiError, errorText } from '../lib/api.js'
 import { AuthShell } from './AuthShell.jsx'
 
 export function LoginPage() {
   const { status, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [form, setForm] = useState({ email: '', password: '' })
-  const [error, setError] = useState('')
+  const [form, setForm] = useState({ identifier: '', password: '' })
+  const [error, setError] = useState({ text: '', tone: 'danger' })
   const [busy, setBusy] = useState(false)
 
   if (status === 'authenticated') return <Navigate to="/dashboard" replace />
@@ -19,13 +19,18 @@ export function LoginPage() {
 
   async function submit(event) {
     event.preventDefault()
-    setError('')
+    setError({ text: '', tone: 'danger' })
+    if (!form.identifier.trim() || !form.password) {
+      setError({ text: 'Enter your email or mobile number and your password.', tone: 'danger' })
+      return
+    }
     setBusy(true)
     try {
-      await login(form.email.trim(), form.password)
+      await login(form.identifier.trim(), form.password)
       navigate(location.state?.from || '/dashboard', { replace: true })
     } catch (err) {
-      setError(errorText(err))
+      const locked = err instanceof ApiError && err.status === 423
+      setError({ text: errorText(err), tone: locked ? 'warning' : 'danger' })
     } finally {
       setBusy(false)
     }
@@ -34,7 +39,7 @@ export function LoginPage() {
   return (
     <AuthShell
       title="Welcome back"
-      subtitle="Sign in with the email your company registered for you."
+      subtitle="Sign in with the email or mobile number your company registered for you."
       footer={
         <>
           Setting up PULSE for a new company?{' '}
@@ -45,20 +50,23 @@ export function LoginPage() {
       }
     >
       <form className="space-y-5" onSubmit={submit} noValidate>
-        <Field id="email" label="Email" type="email" autoComplete="email" placeholder="you@company.pk" required value={form.email} onChange={update('email')} />
         <Field
-          id="password"
-          label="Password"
-          type="password"
-          autoComplete="current-password"
+          id="identifier"
+          label="Email or mobile number"
+          autoComplete="username"
+          placeholder="you@company.com or 0300 1234567"
           required
-          value={form.password}
-          onChange={update('password')}
+          value={form.identifier}
+          onChange={update('identifier')}
         />
-        <Alert key={error}>{error}</Alert>
+        <Field id="password" label="Password" type="password" autoComplete="current-password" required value={form.password} onChange={update('password')} />
+        <Alert key={error.text} tone={error.tone}>{error.text}</Alert>
         <Button type="submit" size="lg" className="w-full" loading={busy}>
           Sign in
         </Button>
+        <p className="text-center text-xs leading-relaxed text-ink-400">
+          Accounts are created by your company&apos;s owner or manager. After 5 wrong passwords an account is locked for 15 minutes.
+        </p>
       </form>
     </AuthShell>
   )

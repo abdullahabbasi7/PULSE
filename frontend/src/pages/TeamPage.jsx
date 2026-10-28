@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
-import { Alert, Avatar, Badge, Button, Card, CONTROL, Field, PageHeader, SelectField, Skeleton, useToast } from '../components/ui/index.js'
+import { Alert, Avatar, Badge, Button, Card, CONTROL, Field, Modal, PageHeader, PasswordStrength, SelectField, Skeleton, useToast } from '../components/ui/index.js'
 import { Icon } from '../layout/icons.jsx'
 import { api, errorText } from '../lib/api.js'
+import { isStrong } from '../lib/passwordRules.js'
 import { ROLES, ROLE_LABELS } from '../lib/roles.js'
 
-const EMPTY = { full_name: '', email: '', role: 'staff', password: '' }
+const EMPTY = { full_name: '', email: '', phone: '', role: 'staff', password: '' }
 
 const ROLE_TONES = { owner: 'brand', manager: 'success', staff: 'neutral', driver: 'warning', accounts: 'neutral' }
 
@@ -36,11 +37,15 @@ function AddMemberForm({ canAddOwner, onAdded, onCancel }) {
   async function submit(event) {
     event.preventDefault()
     setError('')
+    if (!isStrong(form.password, { email: form.email, fullName: form.full_name })) {
+      setError('The temporary password must meet every rule in the checklist.')
+      return
+    }
     setBusy(true)
     try {
       const user = await api('/users', {
         method: 'POST',
-        body: { ...form, full_name: form.full_name.trim(), email: form.email.trim() },
+        body: { ...form, full_name: form.full_name.trim(), email: form.email.trim(), phone: form.phone.trim() || null },
       })
       setForm(EMPTY)
       onAdded(user)
@@ -54,23 +59,18 @@ function AddMemberForm({ canAddOwner, onAdded, onCancel }) {
   return (
     <Card
       title="Add a team member"
-      description="They sign in with this email and the temporary password you share with them."
+      description="They sign in with this email or mobile number, using the temporary password you share with them."
       className="mb-6"
     >
       <form className="grid gap-4 md:grid-cols-2" onSubmit={submit} noValidate>
         <Field id="member_name" label="Full name" required value={form.full_name} onChange={update('full_name')} />
         <Field id="member_email" label="Email" type="email" required value={form.email} onChange={update('email')} />
+        <Field id="member_phone" label="Mobile number" type="tel" placeholder="0300 1234567" hint="Optional. Lets them sign in with their number." value={form.phone} onChange={update('phone')} />
         <SelectField id="member_role" label="Role" options={roleOptions} value={form.role} onChange={update('role')} />
-        <Field
-          id="member_password"
-          label="Temporary password"
-          type="password"
-          autoComplete="new-password"
-          hint="At least 8 characters."
-          required
-          value={form.password}
-          onChange={update('password')}
-        />
+        <div className="md:col-span-2">
+          <Field id="member_password" label="Temporary password" type="password" autoComplete="new-password" required value={form.password} onChange={update('password')} />
+          <PasswordStrength password={form.password} email={form.email} fullName={form.full_name} />
+        </div>
         {error && (
           <div className="md:col-span-2">
             <Alert key={error}>{error}</Alert>
@@ -89,7 +89,7 @@ function AddMemberForm({ canAddOwner, onAdded, onCancel }) {
   )
 }
 
-function MemberRow({ member, isSelf, canEdit, onChanged }) {
+function MemberRow({ member, isSelf, canEdit, canReset, onChanged, onReset }) {
   const [busy, setBusy] = useState(false)
   const toast = useToast()
 
@@ -114,7 +114,10 @@ function MemberRow({ member, isSelf, canEdit, onChanged }) {
           {member.full_name}
           {isSelf && <span className="ml-2 text-xs font-normal text-ink-400">You</span>}
         </p>
-        <p className="truncate text-sm text-ink-500">{member.email}</p>
+        <p className="truncate text-sm text-ink-500">
+          {member.email}
+          {member.phone && <span className="tabular text-ink-400"> · {member.phone}</span>}
+        </p>
       </div>
 
       <div className="flex items-center gap-3">
@@ -143,6 +146,12 @@ function MemberRow({ member, isSelf, canEdit, onChanged }) {
           {member.is_active ? 'Active' : 'Deactivated'}
         </Badge>
 
+        {canReset && !isSelf && (
+          <Button variant="ghost" size="sm" onClick={() => onReset(member)}>
+            <Icon name="lock" className="h-4 w-4" />
+            Reset password
+          </Button>
+        )}
         {editable && (
           <Button
             variant={member.is_active ? 'danger' : 'secondary'}
@@ -163,6 +172,55 @@ function MemberRow({ member, isSelf, canEdit, onChanged }) {
   )
 }
 
+function ResetPasswordModal({ member, onClose }) {
+  const toast = useToast()
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    setPassword('')
+    setError('')
+  }, [member])
+  const strong = member ? isStrong(password, { email: member.email, fullName: member.full_name }) : false
+
+  async function submit(event) {
+    event?.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      await api(`/users/${member.id}/reset-password`, { method: 'POST', body: { new_password: password } })
+      toast(`New password set for ${member.full_name}. Their account is unlocked.`)
+      onClose()
+    } catch (err) {
+      setError(errorText(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal
+      open={Boolean(member)}
+      onClose={onClose}
+      title="Reset password"
+      description={member ? `Set a temporary password for ${member.full_name} and share it with them in person. This also unlocks a locked account.` : ''}
+      size="sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={submit} loading={busy} disabled={!strong}>Set password</Button>
+        </>
+      }
+    >
+      <form onSubmit={submit} noValidate className="space-y-3">
+        <Field id="reset_password" label="New temporary password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        {member && <PasswordStrength password={password} email={member.email} fullName={member.full_name} />}
+        <Alert key={error}>{error}</Alert>
+      </form>
+    </Modal>
+  )
+}
+
 export function TeamPage() {
   const { user } = useAuth()
   const toast = useToast()
@@ -171,6 +229,7 @@ export function TeamPage() {
   const [adding, setAdding] = useState(false)
   const [query, setQuery] = useState('')
   const isOwner = user.role === 'owner'
+  const [resetting, setResetting] = useState(null)
 
   const load = useCallback(async () => {
     try {
@@ -190,7 +249,7 @@ export function TeamPage() {
     if (!members) return null
     const needle = query.trim().toLowerCase()
     if (!needle) return members
-    return members.filter((m) => `${m.full_name} ${m.email} ${m.role}`.toLowerCase().includes(needle))
+    return members.filter((m) => `${m.full_name} ${m.email} ${m.phone || ''} ${m.role}`.toLowerCase().includes(needle))
   }, [members, query])
 
   return (
@@ -231,7 +290,7 @@ export function TeamPage() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search name, email or role"
+              placeholder="Search name, email, phone or role"
               aria-label="Search members"
               className={`${CONTROL} py-2 pl-9`}
             />
@@ -260,12 +319,21 @@ export function TeamPage() {
         {visible && (
           <ul className="divide-y divide-ink-100 border-t border-ink-100">
             {visible.map((member) => (
-              <MemberRow key={member.id} member={member} isSelf={member.id === user.id} canEdit={isOwner} onChanged={replace} />
+              <MemberRow
+                key={member.id}
+                member={member}
+                isSelf={member.id === user.id}
+                canEdit={isOwner}
+                canReset={isOwner || member.role !== 'owner'}
+                onChanged={replace}
+                onReset={setResetting}
+              />
             ))}
             {visible.length === 0 && <li className="px-6 py-10 text-center text-sm text-ink-500">No one matches "{query}".</li>}
           </ul>
         )}
       </Card>
+      <ResetPasswordModal member={resetting} onClose={() => setResetting(null)} />
     </>
   )
 }

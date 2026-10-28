@@ -13,6 +13,9 @@ function Help({ id, hint, error }) {
   )
 }
 
+// Same look as CONTROL but without full width, for inputs given their own width.
+export const CONTROL_INLINE = CONTROL.replace('block w-full', 'block')
+
 // Text input with label. Password fields get a show/hide toggle.
 export function Field({ id, label, hint, error, className = '', type = 'text', ...inputProps }) {
   const [revealed, setRevealed] = useState(false)

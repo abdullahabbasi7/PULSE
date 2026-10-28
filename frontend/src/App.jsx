@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage.jsx'
 import { TeamPage } from './pages/TeamPage.jsx'
 import { SettingsPage } from './pages/SettingsPage.jsx'
 import { NotFoundPage } from './pages/NotFoundPage.jsx'
+import { AccountPage } from './pages/AccountPage.jsx'
 // Module pages — each member works inside their own folder.
 import { BookingsPage } from './modules/bookings/BookingsPage.jsx' // M1 · Abdullah
 import { InventoryPage } from './modules/inventory/InventoryPage.jsx' // M2 · Amna
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/staff/*" element={guarded('/staff', <AttendancePage />)} />
         <Route path="/team" element={guarded('/team', <TeamPage />)} />
         <Route path="/settings" element={guarded('/settings', <SettingsPage />)} />
+        <Route path="/account" element={<AccountPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 

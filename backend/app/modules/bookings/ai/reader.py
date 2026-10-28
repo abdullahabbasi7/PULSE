@@ -301,6 +301,15 @@ class InquiryReader:
         spans = _spans_from_tags(tokens, tags, probs)
         for s in spans:
             s["text"] = text[s["start"] : s["end"]]
+        # A phone number is found by pattern; tagger spans inside it (e.g. "0321" read as guests) are dropped.
+        phone_match = next(
+            (m for m in _PHONE_RE.finditer(text) if 10 <= sum(c.isdigit() for c in m.group()) <= 13), None
+        )
+        if phone_match is not None:
+            p0, p1 = phone_match.span()
+            spans = [s for s in spans if s["end"] <= p0 or s["start"] >= p1]
+            spans.append({"label": "PHONE", "start": p0, "end": p1, "confidence": 1.0, "text": phone_match.group()})
+            spans.sort(key=lambda s: s["start"])
 
         def first(label: str) -> dict | None:
             return next((s for s in spans if s["label"] == label), None)
@@ -340,8 +349,8 @@ class InquiryReader:
                 if dish and dish.lower() not in seen:
                     seen.add(dish.lower())
                     result["menu"].append(dish)
-        if (m := _PHONE_RE.search(text)) is not None:
-            result["phone"] = re.sub(r"[\s\-]", "", m.group())
+        if phone_match is not None:
+            result["phone"] = re.sub(r"[\s\-]", "", phone_match.group())
         return result
 
     # ---------------------------------------------------------- persistence

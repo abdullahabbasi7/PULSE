@@ -39,6 +39,17 @@ def test_inquiry_reader_fills_booking_details(client, new_company):
     assert r["entities"] and r["model"]["event_type_accuracy"] > 0.9
 
 
+def test_phone_number_is_not_read_as_guests(client, new_company):
+    headers, _ = new_company()
+    text = "beti ki mehndi hai 14 november ko, 350 mehman, Marquee Grand. 0321 4567890"
+    r = client.post("/api/v1/bookings/parse-inquiry", headers=headers, json={"text": text}).json()
+    assert r["guest_count"] == 350
+    assert r["phone"] == "03214567890"
+    labels = [(e["label"], e["text"]) for e in r["entities"]]
+    assert ("PHONE", "0321 4567890") in labels
+    assert not any(label == "GUESTS" and "4567890" in t for label, t in labels)
+
+
 def test_create_booking_with_new_client_and_history(client, new_company):
     headers, _ = new_company()
     booking = _booking(client, headers, inquiry_text="Shadi kal hai")

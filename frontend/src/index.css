@@ -60,3 +60,25 @@
     stroke-dashoffset: 0;
   }
 }
+
+/* Printing QR labels: only the label sheet is printed. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-labels,
+  #print-labels * {
+    visibility: visible;
+  }
+  #print-labels {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8mm;
+    padding: 8mm;
+  }
+  #print-labels .label-card {
+    break-inside: avoid;
+  }
+}

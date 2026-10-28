@@ -17,7 +17,7 @@ function greeting(date) {
 
 function WelcomeBanner({ firstName, company }) {
   const now = new Date()
-  const today = now.toLocaleDateString('en-PK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const today = now.toLocaleDateString('en-GB', { timeZone: company.timezone, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   return (
     <section className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-brand-100 via-brand-50 to-kashi-50 px-6 py-8 text-ink-900 shadow-glaze ring-1 ring-brand-100 sm:px-10 sm:py-10">
       <KashiTiles
@@ -75,7 +75,7 @@ function ModuleCard({ module, glaze }) {
   )
 }
 
-function SetupChecklist({ company, teamSize }) {
+function SetupChecklist({ company, teamSize, bookings }) {
   const steps = [
     {
       title: 'Complete your company details',
@@ -93,8 +93,8 @@ function SetupChecklist({ company, teamSize }) {
     },
     {
       title: 'Record your first booking',
-      text: 'Available once the bookings module is ready.',
-      done: false,
+      text: 'Paste a client inquiry and let the AI reader fill the form.',
+      done: bookings > 0,
       to: '/bookings',
       action: 'View bookings',
     },
@@ -140,6 +140,49 @@ function SetupChecklist({ company, teamSize }) {
   )
 }
 
+function TodayStrip({ role }) {
+  const [stats, setStats] = useState({})
+  useEffect(() => {
+    let alive = true
+    const can = (path) => rolesFor(path).includes(role)
+    const load = async () => {
+      const next = {}
+      await Promise.all([
+        can('/bookings') && api('/bookings/summary').then((s) => (next.bookings = s)).catch(() => {}),
+        can('/inventory') && api('/inventory/alerts').then((a) => (next.alerts = a.length)).catch(() => {}),
+        can('/staff') && api('/attendance/sheet').then((s) => (next.sheet = s)).catch(() => {}),
+      ])
+      if (alive) setStats(next)
+    }
+    load()
+    return () => {
+      alive = false
+    }
+  }, [role])
+  const tiles = [
+    stats.bookings && { to: '/bookings', label: "Today's events", value: stats.bookings.today, hint: `${stats.bookings.next_7_days} in the next 7 days`, icon: 'calendar', tone: 'text-brand-700' },
+    stats.alerts != null && { to: '/inventory', label: 'Inventory alerts', value: stats.alerts, hint: stats.alerts ? 'low stock or not returned' : 'all clear', icon: 'box', tone: stats.alerts ? 'text-saffron-700' : 'text-kashi-700' },
+    stats.sheet && { to: '/staff?tab=today', label: 'Staff present', value: stats.sheet.present + stats.sheet.late, hint: `${stats.sheet.late} late · ${stats.sheet.absent} absent`, icon: 'badge', tone: 'text-kashi-700' },
+  ].filter(Boolean)
+  if (!tiles.length) return null
+  return (
+    <section aria-label="Today" className="grid gap-4 sm:grid-cols-3">
+      {tiles.map((t) => (
+        <Link key={t.label} to={t.to} className="group flex items-center gap-4 rounded-panel bg-white px-5 py-4 shadow-glaze ring-1 ring-ink-200/70 transition-shadow hover:shadow-lift">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-ink-50 text-ink-500 transition-colors group-hover:bg-brand-50 group-hover:text-brand-700">
+            <Icon name={t.icon} />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-xs font-medium uppercase tracking-wide text-ink-400">{t.label}</span>
+            <span className={`tabular block font-display text-3xl leading-tight ${t.tone}`}>{t.value}</span>
+            <span className="block truncate text-xs text-ink-500">{t.hint}</span>
+          </span>
+        </Link>
+      ))}
+    </section>
+  )
+}
+
 function WorkspaceFacts({ company, teamSize, role }) {
   const facts = [
     { label: 'City', value: company.city || 'Not set' },
@@ -166,6 +209,7 @@ export function DashboardPage() {
   const { user, company } = useAuth()
   const canSeeTeam = ['owner', 'manager'].includes(user.role)
   const [teamSize, setTeamSize] = useState(canSeeTeam ? null : undefined)
+  const [bookingCount, setBookingCount] = useState(0)
   const firstName = user.full_name.split(' ')[0]
   const modules = Object.values(MODULES).filter((module) => rolesFor(module.path).includes(user.role))
 
@@ -174,11 +218,15 @@ export function DashboardPage() {
     api('/users')
       .then((users) => setTeamSize(users.length))
       .catch(() => setTeamSize(0))
+    api('/bookings/summary')
+      .then((s) => setBookingCount(Object.values(s.by_status).reduce((a, b) => a + b, 0)))
+      .catch(() => {})
   }, [canSeeTeam])
 
   return (
     <div className="space-y-8">
       <WelcomeBanner firstName={firstName} company={company} />
+      <TodayStrip role={user.role} />
 
       <section aria-labelledby="modules-heading">
         <div className="mb-4 flex items-end justify-between">
@@ -186,7 +234,7 @@ export function DashboardPage() {
             Your modules
           </h2>
           <Badge tone="brand" dot>
-            Mid-term build
+            3 AI modules live
           </Badge>
         </div>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -198,7 +246,7 @@ export function DashboardPage() {
 
       {canSeeTeam && (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-          <SetupChecklist company={company} teamSize={teamSize ?? 0} />
+          <SetupChecklist company={company} teamSize={teamSize ?? 0} bookings={bookingCount} />
           <WorkspaceFacts company={company} teamSize={teamSize} role={user.role} />
         </div>
       )}

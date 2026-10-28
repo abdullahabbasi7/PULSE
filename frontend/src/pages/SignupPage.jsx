@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
-import { Alert, Button, Field } from '../components/ui/index.js'
+import { Alert, Button, Field, PasswordStrength } from '../components/ui/index.js'
 import { errorText } from '../lib/api.js'
+import { isStrong } from '../lib/passwordRules.js'
 import { AuthShell } from './AuthShell.jsx'
 
-const EMPTY = { company_name: '', city: '', phone: '', owner_name: '', email: '', password: '' }
+const EMPTY = { company_name: '', city: '', phone: '', owner_name: '', email: '', mobile: '', password: '', confirm: '' }
 
 function Group({ title, children }) {
   return (
@@ -26,12 +27,19 @@ export function SignupPage() {
   if (status === 'authenticated') return <Navigate to="/dashboard" replace />
 
   const update = (key) => (event) => setForm({ ...form, [key]: event.target.value })
+  const context = { email: form.email, fullName: form.owner_name }
+  const strong = isStrong(form.password, context)
+  const matches = form.confirm.length > 0 && form.confirm === form.password
 
   async function submit(event) {
     event.preventDefault()
     setError('')
-    if (form.password.length < 8) {
-      setError('Password must be at least 8 characters.')
+    if (!strong) {
+      setError('Choose a stronger password: it must meet every rule in the checklist.')
+      return
+    }
+    if (!matches) {
+      setError('The two passwords do not match.')
       return
     }
     setBusy(true)
@@ -40,6 +48,7 @@ export function SignupPage() {
         company_name: form.company_name.trim(),
         owner_name: form.owner_name.trim(),
         email: form.email.trim(),
+        mobile: form.mobile.trim(),
         password: form.password,
         phone: form.phone.trim() || null,
         city: form.city.trim() || null,
@@ -55,7 +64,7 @@ export function SignupPage() {
   return (
     <AuthShell
       title="Create your workspace"
-      subtitle="Your company gets its own private PULSE. You'll be the owner and can invite your team next."
+      subtitle="Your company gets its own private PULSE. You'll be the owner and can register your team next."
       footer={
         <>
           Already have an account?{' '}
@@ -69,27 +78,42 @@ export function SignupPage() {
         <Group title="Your company">
           <Field id="company_name" label="Company name" placeholder="e.g. Royal Caterers" required value={form.company_name} onChange={update('company_name')} />
           <div className="grid grid-cols-2 gap-3">
-            <Field id="city" label="City" placeholder="Islamabad" value={form.city} onChange={update('city')} />
-            <Field id="phone" label="Phone" type="tel" placeholder="051-1234567" value={form.phone} onChange={update('phone')} />
+            <Field id="city" label="City" placeholder="Your city" value={form.city} onChange={update('city')} />
+            <Field id="phone" label="Office phone" type="tel" placeholder="Optional" value={form.phone} onChange={update('phone')} />
           </div>
         </Group>
         <Group title="Your owner account">
           <Field id="owner_name" label="Full name" autoComplete="name" required value={form.owner_name} onChange={update('owner_name')} />
           <Field id="email" label="Email" type="email" autoComplete="email" required value={form.email} onChange={update('email')} />
           <Field
-            id="password"
-            label="Password"
+            id="mobile"
+            label="Mobile number"
+            type="tel"
+            autoComplete="tel"
+            placeholder="0300 1234567 or +44 7700 900123"
+            hint="You can sign in with this number or your email."
+            required
+            value={form.mobile}
+            onChange={update('mobile')}
+          />
+          <div>
+            <Field id="password" label="Password" type="password" autoComplete="new-password" required value={form.password} onChange={update('password')} />
+            <PasswordStrength password={form.password} email={form.email} fullName={form.owner_name} />
+          </div>
+          <Field
+            id="confirm"
+            label="Confirm password"
             type="password"
             autoComplete="new-password"
-            hint="At least 8 characters."
             required
-            value={form.password}
-            onChange={update('password')}
+            value={form.confirm}
+            onChange={update('confirm')}
+            error={form.confirm && !matches ? 'The passwords do not match.' : undefined}
           />
         </Group>
         <div className="space-y-4">
           <Alert key={error}>{error}</Alert>
-          <Button type="submit" size="lg" className="w-full" loading={busy}>
+          <Button type="submit" size="lg" className="w-full" loading={busy} disabled={!strong || !matches}>
             Create workspace
           </Button>
         </div>

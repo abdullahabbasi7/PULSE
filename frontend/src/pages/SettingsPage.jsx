@@ -1,6 +1,19 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
-import { Button, Card, Field, PageHeader, useToast } from '../components/ui/index.js'
+import { Button, Card, Field, PageHeader, SelectField, useToast } from '../components/ui/index.js'
+
+const COMMON_ZONES = ['Asia/Karachi', 'Asia/Dubai', 'Asia/Riyadh', 'Asia/Kolkata', 'Asia/Dhaka', 'Asia/Kuala_Lumpur', 'Asia/Singapore', 'Europe/London', 'Europe/Berlin', 'Europe/Istanbul', 'Africa/Cairo', 'Africa/Nairobi', 'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'America/Toronto', 'Australia/Sydney', 'UTC']
+
+function zoneOptions(current) {
+  let zones = COMMON_ZONES
+  try {
+    zones = Intl.supportedValuesOf('timeZone')
+  } catch {
+    // Older browsers: fall back to the short list.
+  }
+  const list = zones.includes(current) ? zones : [current, ...zones]
+  return list.map((zone) => ({ value: zone, label: zone.replace(/_/g, ' ') }))
+}
 import { api, errorText } from '../lib/api.js'
 
 function fromCompany(company) {
@@ -9,6 +22,7 @@ function fromCompany(company) {
     phone: company.phone || '',
     city: company.city || '',
     address: company.address || '',
+    timezone: company.timezone || 'Asia/Karachi',
   }
 }
 
@@ -31,6 +45,7 @@ export function SettingsPage() {
   const [form, setForm] = useState(saved)
   const [busy, setBusy] = useState(false)
   const update = (key) => (event) => setForm({ ...form, [key]: event.target.value })
+  const zones = useMemo(() => zoneOptions(form.timezone), [form.timezone])
   const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(saved), [form, saved])
 
   async function submit(event) {
@@ -44,6 +59,7 @@ export function SettingsPage() {
           phone: form.phone.trim() || null,
           city: form.city.trim() || null,
           address: form.address.trim() || null,
+          timezone: form.timezone,
         },
       })
       setCompany(result)
@@ -68,6 +84,10 @@ export function SettingsPage() {
             <Field id="company_phone" label="Phone" type="tel" value={form.phone} onChange={update('phone')} />
             <Field id="company_city" label="City" value={form.city} onChange={update('city')} />
             <Field id="company_address" label="Address" value={form.address} onChange={update('address')} className="sm:col-span-2" />
+          </Section>
+          <div className="border-t border-ink-100" />
+          <Section title="Time zone" description="Used for today's live board, attendance times and late marks.">
+            <SelectField id="company_timezone" label="Company time zone" options={zones} value={form.timezone} onChange={update('timezone')} className="sm:col-span-2" />
           </Section>
         </Card>
 
