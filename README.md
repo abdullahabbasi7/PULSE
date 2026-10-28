@@ -91,12 +91,12 @@ These accounts are created by `seed_demo`. They are fictional companies. Every o
 
 | Company | Email | Mobile | Role |
 |---|---|---|---|
-| Royal Caterers (Demo), Islamabad | owner@royal-demo.pk | 0300 0000001 | Owner |
+| Royal Caterers, Islamabad | owner@royal-demo.pk | 0300 0000001 | Owner |
 | | manager@royal-demo.pk | 0300 0000002 | Manager |
 | | staff@royal-demo.pk | 0300 0000003 | Staff |
 | | driver@royal-demo.pk | 0300 0000004 | Driver |
 | | accounts@royal-demo.pk | 0300 0000005 | Accounts |
-| Crescent Events (Demo), Dubai | owner@crescent-demo.ae | +971 50 000 0001 | Owner |
+| Crescent Events, Dubai | owner@crescent-demo.ae | +971 50 000 0001 | Owner |
 | | manager@crescent-demo.ae | +971 50 000 0002 | Manager |
 
 Royal Caterers comes with clients, bookings (two today, one live), stock and staff. Sign in to both companies to show that one company can never see another company's data.

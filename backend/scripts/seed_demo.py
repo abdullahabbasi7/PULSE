@@ -26,7 +26,7 @@ assert not password_problems(PASSWORD), "The demo password must pass the passwor
 
 COMPANIES = [
     {
-        "name": "Royal Caterers (Demo)",
+        "name": "Royal Caterers",
         "city": "Islamabad",
         "timezone": "Asia/Karachi",
         "domain": "royal-demo.pk",
@@ -40,7 +40,7 @@ COMPANIES = [
         "full_demo": True,
     },
     {
-        "name": "Crescent Events (Demo)",
+        "name": "Crescent Events",
         "city": "Dubai",
         "timezone": "Asia/Dubai",
         "domain": "crescent-demo.ae",
