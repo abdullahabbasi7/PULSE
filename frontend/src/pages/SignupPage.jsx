@@ -135,7 +135,7 @@ export function SignupPage() {
           />
           <div>
             <Field id="password" label="Password" type="password" autoComplete="new-password" required value={form.password} onChange={update('password')} />
-            <PasswordStrength password={form.password} email={form.email} fullName={form.owner_name} />
+            <PasswordStrength password={form.password} email={form.email} fullName={form.owner_name} onSuggest={(pw) => setForm((f) => ({ ...f, password: pw, confirm: pw }))} />
           </div>
           <Field
             id="confirm"

@@ -70,7 +70,7 @@ export function AccountPage() {
             <Field id="current" label="Current password" type="password" autoComplete="current-password" value={form.current} onChange={update('current')} />
             <div>
               <Field id="next" label="New password" type="password" autoComplete="new-password" value={form.next} onChange={update('next')} />
-              <PasswordStrength password={form.next} email={user.email} fullName={user.full_name} />
+              <PasswordStrength password={form.next} email={user.email} fullName={user.full_name} onSuggest={(pw) => setForm((f) => ({ ...f, next: pw, confirm: pw }))} />
             </div>
             <Field
               id="confirm"

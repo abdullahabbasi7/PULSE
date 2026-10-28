@@ -50,3 +50,36 @@ export function strengthScore(password, context) {
   const lengthBonus = Math.min(2, Math.floor(Math.max(0, password.length - MIN_LENGTH) / 4))
   return Math.min(4, Math.round(((passed + lengthBonus) / 8) * 4))
 }
+
+// Words for suggested passwords: everyday, not on the common-word list.
+const WORDS = [
+  'Amber', 'Anchor', 'Apricot', 'Aspen', 'Basil', 'Beacon', 'Birch', 'Bloom', 'Breeze', 'Bronze', 'Cactus', 'Canyon',
+  'Cedar', 'Cinder', 'Citrus', 'Clover', 'Cobalt', 'Comet', 'Copper', 'Coral', 'Crane', 'Delta', 'Dune', 'Ember',
+  'Falcon', 'Fennel', 'Fern', 'Fjord', 'Garnet', 'Ginger', 'Glacier', 'Harbor', 'Hazel', 'Heron', 'Indigo', 'Iris',
+  'Jasmine', 'Juniper', 'Kestrel', 'Kettle', 'Lagoon', 'Lantern', 'Lemon', 'Lilac', 'Lotus', 'Maple', 'Meadow',
+  'Mango', 'Marble', 'Meteor', 'Mint', 'Monsoon', 'Nectar', 'Nutmeg', 'Oasis', 'Olive', 'Onyx', 'Orchid', 'Otter',
+  'Pebble', 'Pepper', 'Pine', 'Plum', 'Quartz', 'Quill', 'Raven', 'Reef', 'Ripple', 'River', 'Saffron', 'Sage',
+  'Sapphire', 'Sierra', 'Sparrow', 'Spruce', 'Summit', 'Tamarind', 'Thistle', 'Tide', 'Topaz', 'Tulip', 'Velvet',
+  'Walnut', 'Willow', 'Zephyr',
+]
+const SYMBOLS = '!#$%&*+=?@^~'
+
+function randomInt(max) {
+  const buf = new Uint32Array(1)
+  crypto.getRandomValues(buf) // cryptographically secure, unlike Math.random
+  return buf[0] % max
+}
+
+// A strong but readable password such as "Copper-Lantern7!Breeze", checked against every rule.
+export function suggestPassword(context = {}) {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const pick = () => WORDS[randomInt(WORDS.length)]
+    const [a, b, c] = [pick(), pick(), pick()]
+    if (a === b || b === c || a === c) continue
+    const digits = String(10 + randomInt(90))
+    const symbol = SYMBOLS[randomInt(SYMBOLS.length)]
+    const candidate = `${a}-${b.toLowerCase()}${digits}${symbol}${c}`
+    if (isStrong(candidate, context)) return candidate
+  }
+  return 'Kestrel-quartz47!Monsoon'
+}

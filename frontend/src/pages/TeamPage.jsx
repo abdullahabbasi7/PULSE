@@ -69,7 +69,7 @@ function AddMemberForm({ canAddOwner, onAdded, onCancel }) {
         <SelectField id="member_role" label="Role" options={roleOptions} value={form.role} onChange={update('role')} />
         <div className="md:col-span-2">
           <Field id="member_password" label="Temporary password" type="password" autoComplete="new-password" required value={form.password} onChange={update('password')} />
-          <PasswordStrength password={form.password} email={form.email} fullName={form.full_name} />
+          <PasswordStrength password={form.password} email={form.email} fullName={form.full_name} onSuggest={(pw) => setForm((f) => ({ ...f, password: pw }))} />
         </div>
         {error && (
           <div className="md:col-span-2">
@@ -214,7 +214,7 @@ function ResetPasswordModal({ member, onClose }) {
     >
       <form onSubmit={submit} noValidate className="space-y-3">
         <Field id="reset_password" label="New temporary password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        {member && <PasswordStrength password={password} email={member.email} fullName={member.full_name} />}
+        {member && <PasswordStrength password={password} email={member.email} fullName={member.full_name} onSuggest={setPassword} />}
         <Alert key={error}>{error}</Alert>
       </form>
     </Modal>
