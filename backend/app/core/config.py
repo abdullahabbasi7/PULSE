@@ -1,5 +1,7 @@
 """Application settings, read from environment variables or a local .env file."""
 
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +20,16 @@ class Settings(BaseSettings):
     refresh_token_days: int = 7
 
     cors_origins: list[str] = ["http://localhost:5173"]
+
+    # Mobile numbers typed in national format (0300...) get this country code.
+    default_country_code: str = "92"
+
+    # Sign-in protection: after this many wrong passwords the account is locked for a while.
+    max_failed_logins: int = 5
+    lockout_minutes: int = 15
+
+    # Trained AI models are saved here (created on first use; not committed to Git).
+    ai_model_dir: str = str(Path(__file__).resolve().parents[2] / ".models")
 
 
 settings = Settings()

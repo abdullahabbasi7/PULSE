@@ -14,3 +14,4 @@ class Company(IdMixin, Base):
     address: Mapped[str | None] = mapped_column(Text)
     city: Mapped[str | None] = mapped_column(Text)
     logo_url: Mapped[str | None] = mapped_column(Text)
+    timezone: Mapped[str] = mapped_column(Text, nullable=False, default="Asia/Karachi")

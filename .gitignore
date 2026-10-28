@@ -27,3 +27,6 @@ media/
 .DS_Store
 Thumbs.db
 *.log
+
+# Trained AI models (created on first run)
+backend/.models/

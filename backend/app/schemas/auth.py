@@ -1,5 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
+from app.core.passwords import ensure_strong
+from app.schemas.common import OptionalPhone, Phone
 from app.schemas.company import CompanyOut
 from app.schemas.user import UserOut
 
@@ -8,13 +10,19 @@ class SignupIn(BaseModel):
     company_name: str = Field(min_length=2, max_length=120)
     owner_name: str = Field(min_length=2, max_length=120)
     email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
-    phone: str | None = Field(default=None, max_length=40)
+    mobile: Phone = Field(description="Owner's mobile number; it can be used to sign in.")
+    password: str = Field(min_length=1, max_length=128)
+    phone: OptionalPhone = Field(default=None, description="Company phone (optional)")
     city: str | None = Field(default=None, max_length=80)
+
+    @model_validator(mode="after")
+    def _strong_password(self) -> "SignupIn":
+        ensure_strong(self.password, email=str(self.email), full_name=self.owner_name)
+        return self
 
 
 class LoginIn(BaseModel):
-    email: EmailStr
+    identifier: str = Field(min_length=3, max_length=254, description="Email or mobile number")
     password: str = Field(min_length=1, max_length=128)
 
 
@@ -31,3 +39,19 @@ class TokenPair(BaseModel):
 class MeOut(BaseModel):
     user: UserOut
     company: CompanyOut
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=1, max_length=128)
+
+
+class PasswordCheckIn(BaseModel):
+    password: str = Field(max_length=128)
+    email: str | None = None
+    full_name: str | None = None
+
+
+class PasswordCheckOut(BaseModel):
+    ok: bool
+    problems: list[str]
