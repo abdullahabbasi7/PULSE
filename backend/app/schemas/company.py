@@ -16,6 +16,7 @@ class CompanyOut(BaseModel):
     city: str | None
     logo_url: str | None
     timezone: str
+    status: str
     created_at: datetime
 
 

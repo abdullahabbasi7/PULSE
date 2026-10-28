@@ -9,6 +9,7 @@ import { TeamPage } from './pages/TeamPage.jsx'
 import { SettingsPage } from './pages/SettingsPage.jsx'
 import { NotFoundPage } from './pages/NotFoundPage.jsx'
 import { AccountPage } from './pages/AccountPage.jsx'
+import { PlatformApp } from './platform/PlatformApp.jsx' // PULSE team only
 // Module pages — each member works inside their own folder.
 import { BookingsPage } from './modules/bookings/BookingsPage.jsx' // M1 · Abdullah
 import { InventoryPage } from './modules/inventory/InventoryPage.jsx' // M2 · Amna
@@ -23,6 +24,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/platform/*" element={<PlatformApp />} />
 
       <Route
         element={

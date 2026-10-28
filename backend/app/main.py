@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, companies, users
+from app.api.routes import auth, companies, platform, users
 from app.core.ai_cache import warm_up
 from app.core.config import settings
 from app.modules.attendance import routes as attendance
@@ -46,6 +46,7 @@ def health() -> dict[str, str]:
 api.include_router(auth.router)
 api.include_router(companies.router)
 api.include_router(users.router)
+api.include_router(platform.router)  # PULSE team: approves companies
 # Module routers
 api.include_router(bookings.router)  # M1, Abdullah
 api.include_router(inventory.router)  # M2, Amna

@@ -7,7 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_public_session, get_session
+from app.api.deps import company_block_message, get_current_user, get_public_session, get_session
 from app.core.config import settings
 from app.core.passwords import password_problems
 from app.core.phone import looks_like_email, normalize_phone
@@ -29,6 +29,7 @@ from app.schemas.auth import (
     PasswordCheckOut,
     RefreshIn,
     SignupIn,
+    SignupOut,
     TokenPair,
 )
 from app.schemas.company import CompanyOut
@@ -46,9 +47,9 @@ def _duplicate_message(error: IntegrityError) -> str:
     return "An account with this email already exists."
 
 
-@router.post("/signup", response_model=TokenPair, status_code=status.HTTP_201_CREATED)
-def signup(body: SignupIn, session: Session = Depends(get_public_session)) -> dict:
-    """Register a new company and its owner account. The password must pass the policy."""
+@router.post("/signup", response_model=SignupOut, status_code=status.HTTP_202_ACCEPTED)
+def signup(body: SignupIn, session: Session = Depends(get_public_session)) -> SignupOut:
+    """Request a workspace for a new company. Nobody can sign in until PULSE approves it."""
     company_id = uuid.uuid4()
     try:
         with session.begin():
@@ -75,7 +76,11 @@ def signup(body: SignupIn, session: Session = Depends(get_public_session)) -> di
             session.flush()
     except IntegrityError as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_duplicate_message(error)) from None
-    return create_token_pair(owner.id, company_id, owner.role)
+    return SignupOut(
+        status="pending",
+        company_name=body.company_name.strip(),
+        message="Your request has been sent. The PULSE team will review it, and you can sign in once it is approved.",
+    )
 
 
 @router.post("/login", response_model=TokenPair)
@@ -123,6 +128,12 @@ def login(body: LoginIn, session: Session = Depends(get_public_session)) -> dict
             text("SELECT auth_record_login(:uid, :ok, :max, :mins)"),
             {"uid": row["id"], "ok": ok, "max": settings.max_failed_logins, "mins": settings.lockout_minutes},
         ).scalar()
+        blocked = None
+        if ok:
+            # Only someone with the right password learns whether the company is approved.
+            set_current_company(session, row["company_id"])
+            company = session.get(Company, row["company_id"])
+            blocked = company_block_message(company.status, company.review_note)
 
     if not ok:
         if locked_until is not None:
@@ -131,6 +142,8 @@ def login(body: LoginIn, session: Session = Depends(get_public_session)) -> dict
                 f"Too many wrong passwords. This account is locked for {settings.lockout_minutes} minutes.",
             )
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, _BAD_LOGIN)
+    if blocked:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, blocked)
     if not row["is_active"]:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This account has been deactivated. Contact your company owner.")
     return create_token_pair(row["id"], row["company_id"], row["role"])
@@ -147,6 +160,9 @@ def refresh(body: RefreshIn, session: Session = Depends(get_public_session)) -> 
         set_current_company(session, claims["cid"])
         user = session.get(User, uuid.UUID(claims["sub"]))
         if user is None or not user.is_active:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Please log in again.")
+        company = session.get(Company, user.company_id)
+        if company is None or company.status != "active":
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Please log in again.")
         # Tokens issued before the last password change stop working.
         issued = datetime.fromtimestamp(claims.get("iat", 0), timezone.utc)

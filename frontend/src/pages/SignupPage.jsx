@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { Alert, Button, Field, PasswordStrength } from '../components/ui/index.js'
+import { Icon } from '../layout/icons.jsx'
 import { errorText } from '../lib/api.js'
 import { isStrong } from '../lib/passwordRules.js'
 import { AuthShell } from './AuthShell.jsx'
@@ -17,14 +18,50 @@ function Group({ title, children }) {
   )
 }
 
+function RequestSent({ result, email }) {
+  return (
+    <AuthShell
+      title="Request sent"
+      subtitle={`Thank you. We've received the request for ${result.company_name}.`}
+      footer={
+        <Link to="/login" className="font-semibold text-brand-700 underline-offset-4 hover:underline">
+          Back to sign in
+        </Link>
+      }
+    >
+      <div className="animate-fade-in space-y-5">
+        <div className="flex items-start gap-3 rounded-2xl bg-kashi-50 p-5 ring-1 ring-inset ring-kashi-200">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-kashi-500 text-white">
+            <Icon name="check" className="h-5 w-5" strokeWidth={2.4} />
+          </span>
+          <p className="text-sm leading-relaxed text-ink-700">{result.message}</p>
+        </div>
+        <ol className="space-y-3 text-sm text-ink-600">
+          {[
+            'The PULSE team checks your company details.',
+            `Once approved, sign in with ${email || 'your email'} or your mobile number and the password you chose.`,
+            'Then add your team and start taking bookings.',
+          ].map((text, i) => (
+            <li key={i} className="flex gap-3">
+              <span className="tabular flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-ink-500 ring-1 ring-ink-300">{i + 1}</span>
+              <span className="pt-0.5">{text}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </AuthShell>
+  )
+}
+
 export function SignupPage() {
   const { status, signup } = useAuth()
-  const navigate = useNavigate()
   const [form, setForm] = useState(EMPTY)
+  const [sent, setSent] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
   if (status === 'authenticated') return <Navigate to="/dashboard" replace />
+  if (sent) return <RequestSent result={sent} email={form.email} />
 
   const update = (key) => (event) => setForm({ ...form, [key]: event.target.value })
   const context = { email: form.email, fullName: form.owner_name }
@@ -44,7 +81,7 @@ export function SignupPage() {
     }
     setBusy(true)
     try {
-      await signup({
+      const result = await signup({
         company_name: form.company_name.trim(),
         owner_name: form.owner_name.trim(),
         email: form.email.trim(),
@@ -53,7 +90,7 @@ export function SignupPage() {
         phone: form.phone.trim() || null,
         city: form.city.trim() || null,
       })
-      navigate('/dashboard', { replace: true })
+      setSent(result)
     } catch (err) {
       setError(errorText(err))
     } finally {
@@ -63,8 +100,8 @@ export function SignupPage() {
 
   return (
     <AuthShell
-      title="Create your workspace"
-      subtitle="Your company gets its own private PULSE. You'll be the owner and can register your team next."
+      title="Request a workspace"
+      subtitle="Tell us about your company. The PULSE team reviews every request, and you can sign in as the owner once it is approved."
       footer={
         <>
           Already have an account?{' '}
@@ -114,8 +151,9 @@ export function SignupPage() {
         <div className="space-y-4">
           <Alert key={error}>{error}</Alert>
           <Button type="submit" size="lg" className="w-full" loading={busy} disabled={!strong || !matches}>
-            Create workspace
+            Send request
           </Button>
+          <p className="text-center text-xs leading-relaxed text-ink-400">Nothing is set up until your request is approved. Reviews usually take one working day.</p>
         </div>
       </form>
     </AuthShell>

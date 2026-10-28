@@ -63,13 +63,14 @@ def test_adding_member_rejects_weak_password(client, new_company):
     assert response.status_code == 422
 
 
-def test_login_with_email_or_mobile_number(client):
+def test_login_with_email_or_mobile_number(client, approve):
     email, mobile = unique_email("mob"), unique_mobile()
     signup = client.post(
         "/api/v1/auth/signup",
         json={"company_name": "Mobile Co", "owner_name": "Mobile Owner", "email": email, "mobile": mobile, "password": STRONG},
     )
-    assert signup.status_code == 201, signup.text
+    assert signup.status_code == 202, signup.text
+    approve(email)
     international = "+92" + mobile[1:]
     for identifier in (email, mobile, international, f"{mobile[:4]}-{mobile[4:]}"):
         response = client.post("/api/v1/auth/login", json={"identifier": identifier, "password": STRONG})

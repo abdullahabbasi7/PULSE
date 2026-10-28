@@ -30,6 +30,12 @@ class RefreshIn(BaseModel):
     refresh_token: str
 
 
+class SignupOut(BaseModel):
+    status: str
+    company_name: str
+    message: str
+
+
 class TokenPair(BaseModel):
     access_token: str
     refresh_token: str

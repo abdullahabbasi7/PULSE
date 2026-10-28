@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import text
 
 from app.core.passwords import password_problems
+from app.core.platform_admin import create_admin, set_company_status
 from app.core.security import hash_password
 from app.db.session import SessionLocal, set_current_company
 from app.models import Company, User
@@ -22,6 +23,7 @@ from app.modules.bookings.models import Booking, BookingHistory, Client
 from app.modules.inventory.models import InventoryItem, ItemMovement
 
 PASSWORD = "Pulse@Demo2026"
+PLATFORM_ADMIN_EMAIL = "admin@platform-demo.dev"
 assert not password_problems(PASSWORD), "The demo password must pass the password policy"
 
 COMPANIES = [
@@ -168,7 +170,12 @@ def main() -> None:
                 session.flush()
                 if spec["full_demo"]:
                     add_demo_operations(session, company_id, users, ZoneInfo(spec["timezone"]))
+            # Demo companies are approved straight away (a real sign-up waits for a platform admin).
+            set_company_status(company_id, "active", "Demo company")
             print(f"Seeded {spec['name']}")
+    create_admin(PLATFORM_ADMIN_EMAIL, "Platform Admin", PASSWORD)
+    print(f"\nPlatform admin (approves new companies at /platform): {PLATFORM_ADMIN_EMAIL}")
+    print("Demo only. On a live server, create your own admin with scripts.create_platform_admin.")
     print(f"\nDemo password for every account: {PASSWORD}")
     print("Sign in with an email such as owner@royal-demo.pk, or a mobile number such as 0300 0000001.")
 

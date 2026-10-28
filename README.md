@@ -99,6 +99,8 @@ These accounts are created by `seed_demo`. They are fictional companies. Every o
 | Crescent Events, Dubai | owner@crescent-demo.ae | +971 50 000 0001 | Owner |
 | | manager@crescent-demo.ae | +971 50 000 0002 | Manager |
 
+**Platform console** (the PULSE team approves new companies): open `/platform` and sign in with `admin@platform-demo.dev` and the same password. This demo admin is for local use only; on a live server create your own (see below) and never run `seed_demo`.
+
 Royal Caterers comes with clients, bookings (two today, one live), stock and staff. Sign in to both companies to show that one company can never see another company's data.
 
 ### Camera features
@@ -116,9 +118,27 @@ pytest
 
 ---
 
+## Company approval
+
+Signing up does **not** open a workspace. It sends a request:
+
+1. A company fills in **Request a workspace**. It gets no sign-in yet.
+2. A PULSE platform admin reviews it at **`/platform`** and approves or rejects it (a rejection needs a reason, which the owner sees).
+3. Only after approval can the owner sign in and add their team.
+4. An admin can **suspend** an active company later (for example, an unpaid subscription). Its users are locked out at once, even if they are already signed in, until it is reactivated.
+
+Platform admins are not users of any company and have their own sign-in and tokens. Create one on the server with:
+
+```bash
+python -m scripts.create_platform_admin --email you@yourcompany.com --name "Your Name"
+# Docker: docker compose exec backend python -m scripts.create_platform_admin --email ... --name ...
+```
+
+The database enforces this too: the app's own database role cannot change a company's status, so not even a bug in a company screen can approve a company.
+
 ## Sign-in security
 
-- Accounts are created by a company's owner or manager. Only a new company's owner signs up publicly.
+- Accounts are created by a company's owner or manager. A new company's owner can only send a request (see above).
 - Sign in with the registered email or mobile number (any format: `0300 1234567`, `+92 300 1234567`, `+971…`). Numbers are stored in international format, so each mobile number belongs to one account.
 - Passwords must be at least 10 characters with upper and lower case letters, a number and a symbol; no common words, no repeated or sequential runs, and nothing from the person's name or email. The same rules run in the browser (live checklist) and on the server.
 - After 5 wrong passwords the account is locked for 15 minutes. An owner or manager can reset a member's password, which also unlocks it.

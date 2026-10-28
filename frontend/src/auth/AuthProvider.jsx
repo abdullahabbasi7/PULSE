@@ -43,11 +43,10 @@ export function AuthProvider({ children }) {
 
   const signup = useCallback(
     async (payload) => {
-      const tokens = await api('/auth/signup', { method: 'POST', body: payload, auth: false })
-      setTokens(tokens)
-      await loadMe()
+      // A sign-up is a request: no tokens until the PULSE team approves the company.
+      return api('/auth/signup', { method: 'POST', body: payload, auth: false })
     },
-    [loadMe],
+    [],
   )
 
   const logout = useCallback(() => {

@@ -29,7 +29,7 @@ export function LoginPage() {
       await login(form.identifier.trim(), form.password)
       navigate(location.state?.from || '/dashboard', { replace: true })
     } catch (err) {
-      const locked = err instanceof ApiError && err.status === 423
+      const locked = err instanceof ApiError && (err.status === 423 || err.status === 403)
       setError({ text: errorText(err), tone: locked ? 'warning' : 'danger' })
     } finally {
       setBusy(false)
@@ -42,9 +42,9 @@ export function LoginPage() {
       subtitle="Sign in with the email or mobile number your company registered for you."
       footer={
         <>
-          Setting up PULSE for a new company?{' '}
+          New to PULSE?{' '}
           <Link to="/signup" className="font-semibold text-brand-700 underline-offset-4 transition-colors hover:text-brand-800 hover:underline">
-            Create a workspace
+            Request a workspace for your company
           </Link>
         </>
       }

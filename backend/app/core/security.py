@@ -95,6 +95,24 @@ def create_token_pair(user_id: uuid.UUID, company_id: uuid.UUID, role: str) -> d
     }
 
 
+PLATFORM = "platform"
+
+
+def create_platform_token(admin_id: uuid.UUID) -> str:
+    """Token for the PULSE platform console. It has no company and is refused by company routes."""
+    now = datetime.now(timezone.utc)
+    payload = {"sub": str(admin_id), "type": PLATFORM, "iat": now, "exp": now + timedelta(hours=8), "jti": uuid.uuid4().hex}
+    return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+
+
+def decode_platform_token(token: str) -> dict:
+    claims = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm], options={"require": ["sub", "type", "exp"]})
+    if claims.get("type") != PLATFORM:
+        raise jwt.InvalidTokenError("Wrong token type")
+    uuid.UUID(claims["sub"])
+    return claims
+
+
 def decode_token(token: str, expected_type: str) -> dict:
     """Return the token's claims, or raise jwt.PyJWTError if it is invalid."""
     claims = jwt.decode(
