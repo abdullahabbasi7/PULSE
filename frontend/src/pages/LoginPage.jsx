@@ -67,6 +67,12 @@ export function LoginPage() {
         <p className="text-center text-xs leading-relaxed text-ink-400">
           Accounts are created by your company&apos;s owner or manager. After 5 wrong passwords an account is locked for 15 minutes.
         </p>
+        <p className="text-center text-xs text-ink-400">
+          PULSE team?{' '}
+          <Link to="/platform/login" className="font-medium text-ink-500 underline-offset-4 hover:text-brand-700 hover:underline">
+            Platform console sign-in
+          </Link>
+        </p>
       </form>
     </AuthShell>
   )
