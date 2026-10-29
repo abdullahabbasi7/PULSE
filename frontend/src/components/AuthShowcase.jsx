@@ -1,5 +1,6 @@
 // Animated preview of PULSE's three AI modules for the sign-in and sign-up panel.
 // Everything is drawn in code (no stock images), so it stays sharp and loads instantly.
+import { Tilt } from './ui/Motion.jsx'
 
 function Sparkle({ className = 'h-3.5 w-3.5' }) {
   return (
@@ -87,8 +88,12 @@ function ClocheArt({ className = '' }) {
 function Card({ className = '', delay = 0, floatDelay = 0, children }) {
   return (
     <div className={`absolute animate-card-in ${className}`} style={{ animationDelay: `${delay}ms` }}>
-      <div className="animate-float rounded-2xl bg-white/95 p-4 shadow-[0_18px_40px_-18px_rgba(31,44,105,0.35)] ring-1 ring-ink-200/70 backdrop-blur" style={{ animationDelay: `${floatDelay}s` }}>
-        {children}
+      <div className="animate-float" style={{ animationDelay: `${floatDelay}s` }}>
+        <Tilt max={12} scale={1.04} className="rounded-2xl">
+          <div className="rounded-2xl bg-white/95 p-4 shadow-[0_18px_40px_-18px_rgba(31,44,105,0.35)] ring-1 ring-ink-200/70 backdrop-blur">
+            {children}
+          </div>
+        </Tilt>
       </div>
     </div>
   )

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { KashiTiles } from '../components/KashiTiles.jsx'
-import { Badge, Card, Skeleton } from '../components/ui/index.js'
+import { Badge, Card, CountUp, Reveal, Skeleton, Tilt } from '../components/ui/index.js'
 import { Icon } from '../layout/icons.jsx'
 import { rolesFor } from '../layout/nav.js'
 import { api } from '../lib/api.js'
@@ -43,9 +43,10 @@ function WelcomeBanner({ firstName, company }) {
 
 function ModuleCard({ module, glaze }) {
   return (
+    <Tilt className="rounded-panel">
     <Link
       to={module.path}
-      className="group relative flex flex-col overflow-hidden rounded-panel bg-white p-6 shadow-glaze ring-1 ring-ink-200/70 transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lift"
+      className="group relative flex h-full flex-col overflow-hidden rounded-panel bg-white p-6 shadow-glaze ring-1 ring-ink-200/70 transition-shadow duration-300 ease-out hover:shadow-lift"
     >
       <div className="flex items-start justify-between">
         <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${glaze.tile}`}>
@@ -72,6 +73,7 @@ function ModuleCard({ module, glaze }) {
         </span>
       </div>
     </Link>
+    </Tilt>
   )
 }
 
@@ -167,17 +169,19 @@ function TodayStrip({ role }) {
   if (!tiles.length) return null
   return (
     <section aria-label="Today" className="grid gap-4 sm:grid-cols-3">
-      {tiles.map((t) => (
-        <Link key={t.label} to={t.to} className="group flex items-center gap-4 rounded-panel bg-white px-5 py-4 shadow-glaze ring-1 ring-ink-200/70 transition-shadow hover:shadow-lift">
+      {tiles.map((t, i) => (
+        <Reveal key={t.label} delay={i * 110} className="h-full">
+        <Link to={t.to} className="group flex h-full items-center gap-4 rounded-panel bg-white px-5 py-4 shadow-glaze ring-1 ring-ink-200/70 transition-shadow hover:shadow-lift">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-ink-50 text-ink-500 transition-colors group-hover:bg-brand-50 group-hover:text-brand-700">
             <Icon name={t.icon} />
           </span>
           <span className="min-w-0">
             <span className="block text-xs font-medium uppercase tracking-wide text-ink-400">{t.label}</span>
-            <span className={`tabular block font-display text-3xl leading-tight ${t.tone}`}>{t.value}</span>
+            <CountUp value={t.value} className={`tabular block font-display text-3xl leading-tight ${t.tone}`} />
             <span className="block truncate text-xs text-ink-500">{t.hint}</span>
           </span>
         </Link>
+        </Reveal>
       ))}
     </section>
   )
@@ -238,8 +242,10 @@ export function DashboardPage() {
           </Badge>
         </div>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {modules.map((module) => (
-            <ModuleCard key={module.code} module={module} glaze={GLAZE[module.glaze]} />
+          {modules.map((module, i) => (
+            <Reveal key={module.code} delay={i * 120} className="h-full">
+              <ModuleCard module={module} glaze={GLAZE[module.glaze]} />
+            </Reveal>
           ))}
         </div>
       </section>

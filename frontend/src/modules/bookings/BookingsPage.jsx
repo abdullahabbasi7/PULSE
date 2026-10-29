@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Link, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider.jsx'
-import { Alert, Button, Card, CONTROL, CONTROL_INLINE, EmptyState, PageHeader, Skeleton, Tabs, useToast } from '../../components/ui/index.js'
+import { Alert, Button, Card, CONTROL, CONTROL_INLINE, EmptyState, PageHeader, Reveal, Skeleton, Tabs, useToast } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { api, errorText } from '../../lib/api.js'
 import { addDays, formatDate, formatMoney, formatNumber, timeRange, todayIn } from '../../lib/format.js'
@@ -126,8 +126,9 @@ function LiveBoard({ onChanged }) {
       )}
       {data && data.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-2">
-          {data.map((b) => (
-            <article key={b.id} className="rounded-panel bg-white p-5 shadow-glaze ring-1 ring-ink-200/70 transition-shadow hover:shadow-pop">
+          {data.map((b, i) => (
+            <Reveal key={b.id} delay={i * 90} className="h-full">
+            <article className="h-full rounded-panel bg-white p-5 shadow-glaze ring-1 ring-ink-200/70 transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-pop">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="tabular text-sm font-semibold text-brand-700">{timeRange(b.start_time, b.end_time)}</p>
@@ -147,6 +148,7 @@ function LiveBoard({ onChanged }) {
                 <ProgressTrack progress={b.progress} busy={busy === b.id} onStep={b.status === 'completed' ? null : (p) => step(b, p)} />
               </div>
             </article>
+            </Reveal>
           ))}
         </div>
       )}

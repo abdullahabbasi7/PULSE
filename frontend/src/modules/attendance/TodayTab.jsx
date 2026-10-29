@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider.jsx'
-import { Alert, Avatar, Badge, Button, Card, CONTROL_INLINE, Field, Modal, SelectField, Skeleton, useToast } from '../../components/ui/index.js'
+import { Alert, Avatar, Badge, Button, Card, CONTROL_INLINE, CountUp, Field, Modal, SelectField, Skeleton, useToast } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { api, apiDownload, errorText } from '../../lib/api.js'
 import { addDays, formatDate, percent } from '../../lib/format.js'
@@ -105,7 +105,7 @@ export function TodayTab({ today, staff, canManage, canExport }) {
         ].map(([label, value, tone]) => (
           <div key={label} className="rounded-panel bg-white px-5 py-4 shadow-glaze ring-1 ring-ink-200/70">
             <p className="text-xs font-medium uppercase tracking-wide text-ink-400">{label}</p>
-            <p className={`tabular mt-1 font-display text-3xl ${tone}`}>{value ?? '–'}</p>
+            <p className={`tabular mt-1 font-display text-3xl ${tone}`}>{value == null ? '–' : <CountUp value={value} />}</p>
           </div>
         ))}
       </div>

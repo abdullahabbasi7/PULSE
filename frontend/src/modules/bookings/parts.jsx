@@ -1,4 +1,4 @@
-import { Badge } from '../../components/ui/index.js'
+import { Badge, CountUp } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { PROGRESS, STATUS } from './constants.js'
 
@@ -63,7 +63,9 @@ export function Stat({ label, value, tone = 'text-ink-900', hint }) {
   return (
     <div className="rounded-panel bg-white px-5 py-4 shadow-glaze ring-1 ring-ink-200/70">
       <p className="text-xs font-medium uppercase tracking-wide text-ink-400">{label}</p>
-      <p className={`tabular mt-1 font-display text-3xl ${tone}`}>{value}</p>
+      <p className={`tabular mt-1 font-display text-3xl ${tone}`}>
+        <CountUp value={value} />
+      </p>
       {hint && <p className="mt-0.5 text-xs text-ink-500">{hint}</p>}
     </div>
   )

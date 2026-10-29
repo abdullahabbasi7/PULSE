@@ -2,7 +2,7 @@
 // It has its own sign-in and token, separate from company accounts.
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
-import { Alert, Badge, Button, Card, EmptyState, Field, Modal, Skeleton, Tabs, useToast } from '../components/ui/index.js'
+import { Alert, Badge, Button, Card, EmptyState, Field, Modal, Reveal, Skeleton, Tabs, useToast } from '../components/ui/index.js'
 import { Icon, PulseMark } from '../layout/icons.jsx'
 import { formatDateTime } from '../lib/format.js'
 
@@ -145,7 +145,7 @@ function ReasonModal({ action, onClose, onConfirm }) {
 function CompanyCard({ c, busy, onDecide, onAsk }) {
   const s = STATUS[c.status]
   return (
-    <li className="rounded-panel bg-white p-5 shadow-glaze ring-1 ring-ink-200/70">
+    <div className="rounded-panel bg-white p-5 shadow-glaze ring-1 ring-ink-200/70 transition-shadow hover:shadow-pop">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -193,7 +193,7 @@ function CompanyCard({ c, busy, onDecide, onAsk }) {
           {c.review_note && <> · <span className="text-ink-700">{c.review_note}</span></>}
         </p>
       )}
-    </li>
+    </div>
   )
 }
 
@@ -308,8 +308,10 @@ function PlatformHome() {
           </EmptyState>
         )}
         <ul className="animate-page-in space-y-4">
-          {visible.map((c) => (
-            <CompanyCard key={c.id} c={c} busy={busy === c.id} onDecide={(co, st) => decide(co, st)} onAsk={(co, st) => setAsking({ company: co, status: st })} />
+          {visible.map((c, i) => (
+            <Reveal as="li" key={c.id} delay={i * 80} className="list-none">
+            <CompanyCard c={c} busy={busy === c.id} onDecide={(co, st) => decide(co, st)} onAsk={(co, st) => setAsking({ company: co, status: st })} />
+            </Reveal>
           ))}
         </ul>
       </main>
