@@ -99,13 +99,14 @@ export function TodayTab({ today, staff, canManage, canExport }) {
 
       <div className="grid grid-cols-3 gap-3">
         {[
-          ['Present', s?.present, 'text-kashi-700'],
-          ['Late', s?.late, 'text-saffron-700'],
-          ['Absent', s?.absent, 'text-red-700'],
-        ].map(([label, value, tone]) => (
+          ['Present', s?.present, 'text-kashi-700', 'checked in today, including late'],
+          ['Late', s?.late, 'text-saffron-700', `arrived after ${lateAfter}`],
+          ['Absent', s?.absent, 'text-red-700', 'no check-in yet'],
+        ].map(([label, value, tone, hint]) => (
           <div key={label} className="rounded-panel bg-white px-5 py-4 shadow-glaze ring-1 ring-ink-200/70">
             <p className="text-xs font-medium uppercase tracking-wide text-ink-400">{label}</p>
             <p className={`tabular mt-1 font-display text-3xl ${tone}`}>{value == null ? '–' : <CountUp value={value} />}</p>
+            <p className="mt-0.5 text-xs text-ink-500">{hint}</p>
           </div>
         ))}
       </div>

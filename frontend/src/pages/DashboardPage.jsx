@@ -171,7 +171,7 @@ function TodayStrip({ role }) {
   const tiles = [
     stats.bookings && { to: '/bookings', label: "Today's events", value: stats.bookings.today, hint: `${stats.bookings.next_7_days} in the next 7 days`, icon: 'calendar', tone: 'text-brand-700' },
     stats.alerts != null && { to: '/inventory', label: 'Inventory alerts', value: stats.alerts, hint: stats.alerts ? 'low stock or not returned' : 'all clear', icon: 'box', tone: stats.alerts ? 'text-saffron-700' : 'text-kashi-700' },
-    stats.sheet && { to: '/staff?tab=today', label: 'Staff present', value: stats.sheet.present + stats.sheet.late, hint: `${stats.sheet.late} late · ${stats.sheet.absent} absent`, icon: 'badge', tone: 'text-kashi-700' },
+    stats.sheet && { to: '/staff?tab=today', label: 'Staff present', value: stats.sheet.present, hint: `${stats.sheet.late} of them late · ${stats.sheet.absent} absent`, icon: 'badge', tone: 'text-kashi-700' },
   ].filter(Boolean)
   if (!tiles.length) return null
   return (
