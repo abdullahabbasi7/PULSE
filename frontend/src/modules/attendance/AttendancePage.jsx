@@ -7,6 +7,7 @@ import { useApi } from '../../lib/useApi.js'
 import { Kiosk } from './Kiosk.jsx'
 import { StaffTab } from './StaffTab.jsx'
 import { TodayTab } from './TodayTab.jsx'
+import { PHOTOS } from '../../components/EventPhotos.jsx'
 
 export function AttendancePage() {
   const { user, company } = useAuth()
@@ -28,6 +29,7 @@ export function AttendancePage() {
     <>
       <PageHeader
         context="M3 · Staff & Attendance"
+        photos={[PHOTOS.hallNight, PHOTOS.archwayDay, PHOTOS.chandelierNight]}
         title="Staff & attendance"
         description="Staff check in and out by face at the office or venue. A head-turn check stops anyone using a photo."
       />

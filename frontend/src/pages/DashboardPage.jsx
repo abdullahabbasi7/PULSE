@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider.jsx'
 import { KashiTiles } from '../components/KashiTiles.jsx'
 import { Aurora, Badge, Card, CountUp, Reveal, Skeleton, Tilt } from '../components/ui/index.js'
 import { ModuleDeck } from '../components/ModuleDeck.jsx'
+import { PhotoCredit, PhotoSlideshow, photosForNow } from '../components/EventPhotos.jsx'
 import { Icon } from '../layout/icons.jsx'
 import { rolesFor } from '../layout/nav.js'
 import { api } from '../lib/api.js'
@@ -29,7 +30,10 @@ function WelcomeBanner({ firstName, company, allowed }) {
         accentClass="stroke-kashi-400"
         diamondClass="stroke-brand-200"
       />
-      <Aurora />
+      <PhotoSlideshow photos={photosForNow(company.timezone)} width={1800} />
+      <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/75 to-brand-50/10" aria-hidden="true" />
+      <Aurora className="opacity-60" />
+      <PhotoCredit className="absolute bottom-2 right-4 z-10 text-white/80 hover:text-white" />
       <div className="relative flex items-center justify-between gap-8">
         <div className="max-w-xl">
           <p className="animate-page-in text-sm font-medium text-brand-700">{today}</p>

@@ -9,6 +9,7 @@ import { PredictTab } from './PredictTab.jsx'
 import { ScanTab } from './ScanTab.jsx'
 import { useEventChoices } from './shared.jsx'
 import { StockTab } from './StockTab.jsx'
+import { PHOTOS } from '../../components/EventPhotos.jsx'
 
 function AlertsStrip({ alerts }) {
   if (!alerts?.length) return null
@@ -56,6 +57,7 @@ export function InventoryPage() {
     <>
       <PageHeader
         context="M2 · Inventory"
+        photos={[PHOTOS.tableDay, PHOTOS.glassesTable, PHOTOS.hallTables]}
         title="Inventory"
         description="Crockery, cutlery and equipment with QR labels. Scan items out to an event and back in, and see what is still missing."
       />

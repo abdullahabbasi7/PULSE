@@ -10,6 +10,7 @@ import { query, useApi } from '../../lib/useApi.js'
 import { BookingDetail } from './BookingDetail.jsx'
 import { EDIT_ROLES, EVENT_LABEL, STATUS } from './constants.js'
 import { NewBooking } from './NewBooking.jsx'
+import { PHOTOS } from '../../components/EventPhotos.jsx'
 import { Meta, ProgressTrack, Stat, StatusBadge } from './parts.jsx'
 
 export function BookingsPage() {
@@ -33,6 +34,7 @@ function BookingsHome() {
     <>
       <PageHeader
         context="M1 · Bookings & Events"
+        photos={[PHOTOS.aisleNight, PHOTOS.ceremonyDay, PHOTOS.gazeboNight]}
         title="Bookings"
         description="Every booking from first inquiry to the last plate packed, and a live board for today's events."
       />

@@ -222,6 +222,10 @@ When you add a table for your module:
 4. In route code, use `session.flush()`, **never** `session.commit()`. The request dependency commits once at the end. Committing early drops the company setting.
 5. Write a test showing that company B cannot see company A's rows. See `tests/test_auth_and_isolation.py`.
 
+## Photo credits
+
+Event photos are free-licence images from [Unsplash](https://unsplash.com/license), loaded from Unsplash's image service in the browser (see `frontend/src/components/EventPhotos.jsx`, which links each photo's page). If a photo cannot load, a light gradient shows instead. Day photos appear on the dashboard from 6 am to 5 pm in the company's time zone, and night photos after that. All other illustrations are drawn in code.
+
 ## Git workflow
 
 - `main` must always run. Never push directly to it.

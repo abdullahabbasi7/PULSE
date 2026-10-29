@@ -3,6 +3,7 @@ import { PulseLogo } from '../layout/icons.jsx'
 import { AuthShowcase } from '../components/AuthShowcase.jsx'
 import { Aurora, Marquee } from '../components/ui/index.js'
 import { EventBackdrop, SIDE_MOTIFS } from '../components/EventBackdrop.jsx'
+import { MIXED_SET, PhotoCredit, PhotoSlideshow } from '../components/EventPhotos.jsx'
 
 // What the whole platform does, grouped from the 12 modules in the proposal.
 const HIGHLIGHTS = [
@@ -44,17 +45,20 @@ export function AuthShell({ title, subtitle, children, footer }) {
     <div className="grid min-h-screen bg-white lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
       {/* The panel stays the height of the screen while a long form scrolls beside it. */}
       <div className="relative hidden h-screen self-start overflow-hidden bg-gradient-to-br from-brand-100 via-brand-50 to-kashi-50 lg:sticky lg:top-0 lg:block">
+        <PhotoSlideshow photos={MIXED_SET} width={1400} interval={6500} />
         <KashiTiles
           animate
           cols={9}
           rows={12}
-          className="absolute inset-0 h-full w-full"
+          className="absolute inset-0 h-full w-full opacity-60"
           starClass="stroke-brand-300/70"
           accentClass="stroke-kashi-400"
           diamondClass="stroke-brand-200"
         />
         {/* Clear porcelain behind the text so it stays easy to read. */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(246,247,251,0.97)_30%,rgba(246,247,251,0.6)_65%,rgba(246,247,251,0.15)_100%)]" />
+        {/* A porcelain veil over the photos keeps the panel light and the text readable. */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(246,247,251,0.97)_28%,rgba(246,247,251,0.78)_60%,rgba(239,243,255,0.55)_100%)]" />
+        <PhotoCredit className="absolute bottom-3 right-4 z-10" />
         <Aurora />
 
         <div className="relative flex h-full flex-col gap-6 px-12 py-10 xl:px-16 [@media(max-height:820px)]:gap-4 [@media(max-height:820px)]:py-7">

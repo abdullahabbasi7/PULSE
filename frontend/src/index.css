@@ -249,3 +249,15 @@
     animation: none !important;
   }
 }
+
+/* Slow zoom and drift on event photos (components/EventPhotos.jsx). */
+@keyframes ken-burns {
+  from { transform: scale(1.04) translate(0, 0); }
+  to { transform: scale(1.16) translate(-2%, -1.5%); }
+}
+.ken-burns {
+  animation: ken-burns 9s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ken-burns { animation: none !important; }
+}
