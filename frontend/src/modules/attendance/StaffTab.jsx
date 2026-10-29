@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Alert, Avatar, Badge, Button, Card, EmptyState, Field, Modal, Skeleton, useFormGuard, useToast } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { api, errorText } from '../../lib/api.js'
@@ -66,24 +66,48 @@ function AddStaffModal({ open, onClose, onAdded }) {
   )
 }
 
+const POSES = [
+  { id: 'front', label: 'Look straight at the camera', hint: 'Face in the oval, eyes open' },
+  { id: 'up', label: 'Tilt the chin up slightly', hint: 'Just a little, keep looking ahead' },
+  { id: 'left', label: 'Turn a little to the left', hint: 'About a quarter turn' },
+  { id: 'right', label: 'Turn a little to the right', hint: 'About a quarter turn' },
+]
+
 function EnrollModal({ member, onClose, onDone }) {
   const camera = useCamera({ facingMode: 'user' })
   const [shots, setShots] = useState([])
-  const [prompt, setPrompt] = useState('')
+  const [step, setStep] = useState(-1) // pose being captured, -1 when idle
+  const [count, setCount] = useState(0) // 3-2-1 before the first photo
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const capturing = step >= 0 || count > 0
+
+  // The camera starts as soon as the window opens.
+  useEffect(() => {
+    if (!member) return undefined
+    setShots([])
+    setError('')
+    const timer = setTimeout(() => camera.start(), 50)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member])
 
   async function capture() {
     setError('')
+    setShots([])
+    for (let n = 3; n > 0; n -= 1) {
+      setCount(n)
+      await sleep(650)
+    }
+    setCount(0)
     const taken = []
-    const steps = ['Look at the camera', 'Tilt your chin up slightly', 'Turn a little to the left', 'Turn a little to the right']
-    for (const step of steps) {
-      setPrompt(step)
-      await sleep(900)
+    for (let k = 0; k < POSES.length; k += 1) {
+      setStep(k)
+      await sleep(1100)
       taken.push(grab(camera.videoRef.current, 720, 0.9))
       setShots([...taken])
     }
-    setPrompt('')
+    setStep(-1)
   }
 
   async function save() {
@@ -103,54 +127,127 @@ function EnrollModal({ member, onClose, onDone }) {
   function close() {
     camera.stop()
     setShots([])
+    setStep(-1)
+    setCount(0)
     onClose()
   }
 
+  const done = shots.length >= POSES.length
   return (
     <Modal
       open={Boolean(member)}
       onClose={close}
       icon="camera"
       title="Register face"
-      description={member ? `Four quick photos of ${member.full_name} in good light, one face in view.` : ''}
+      description={member ? `Four quick photos of ${member.full_name}. Good light, one face in view, no mask or sunglasses.` : ''}
       size="lg"
       footer={
         <>
-          <Button variant="ghost" onClick={close}>Cancel</Button>
-          <Button onClick={save} loading={busy} disabled={shots.length < 3 || Boolean(prompt)}>Save face</Button>
+          <Button variant="ghost" onClick={close} className="mr-auto">Cancel</Button>
+          {done ? (
+            <>
+              <Button variant="secondary" onClick={capture} disabled={camera.state !== 'on' || capturing || busy}>
+                <Icon name="refresh" className="h-4 w-4" />
+                Retake
+              </Button>
+              <Button onClick={save} loading={busy}>
+                <Icon name="check" className="h-4 w-4" strokeWidth={2.4} />
+                Save face
+              </Button>
+            </>
+          ) : (
+            <Button onClick={capture} loading={capturing} disabled={camera.state !== 'on'}>
+              <Icon name="camera" className="h-4 w-4" />
+              {capturing ? 'Taking photos…' : 'Take photos'}
+            </Button>
+          )}
         </>
       }
     >
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-ink-900">
-        <video ref={camera.videoRef} playsInline muted className={`h-full w-full -scale-x-100 object-cover ${camera.state === 'on' ? '' : 'opacity-0'}`} />
-        {camera.state !== 'on' && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Button onClick={camera.start} loading={camera.state === 'starting'} className="!bg-white !text-ink-900">
-              <Icon name="camera" className="h-4 w-4" />
-              Start camera
-            </Button>
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        {/* Camera */}
+        <div>
+          <div className="relative mx-auto aspect-[4/3] max-h-[44vh] w-3/4 md:w-full overflow-hidden rounded-2xl bg-ink-900">
+            <video ref={camera.videoRef} playsInline muted className={`absolute inset-0 h-full w-full -scale-x-100 object-cover ${camera.state === 'on' ? '' : 'opacity-0'}`} />
+            {camera.state === 'on' && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div
+                  className={`aspect-[3/4] h-[78%] rounded-[50%] border-[3px] shadow-[0_0_0_9999px_rgba(23,28,52,0.35)] transition-colors duration-300 ${
+                    step >= 0 ? 'border-kashi-300' : 'border-white/80'
+                  }`}
+                />
+              </div>
+            )}
+            {camera.state !== 'on' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center text-white">
+                <Icon name="camera" className="h-8 w-8 text-white/70" />
+                <p className="text-sm text-white/80">{camera.state === 'starting' ? 'Starting the camera…' : 'Allow camera access in your browser.'}</p>
+                {camera.state !== 'starting' && (
+                  <Button size="sm" onClick={camera.start} className="!bg-white !text-ink-900">
+                    Start camera
+                  </Button>
+                )}
+              </div>
+            )}
+            {count > 0 && (
+              <span key={count} className="absolute inset-0 flex animate-pop-in items-center justify-center font-display text-7xl text-white drop-shadow-lg">
+                {count}
+              </span>
+            )}
+            {step >= 0 && (
+              <p key={step} className="absolute inset-x-0 bottom-3 animate-fade-in px-3 text-center text-sm font-semibold text-white drop-shadow">
+                {POSES[step].label}
+              </p>
+            )}
           </div>
-        )}
-        {prompt && <p className="absolute inset-x-0 bottom-4 animate-fade-in text-center text-lg font-semibold text-white drop-shadow">{prompt}</p>}
-      </div>
-      {camera.error && (
-        <div className="mt-3">
-          <Alert tone="warning">{camera.error}</Alert>
+          {camera.error && (
+            <div className="mt-3">
+              <Alert tone="warning">{camera.error}</Alert>
+            </div>
+          )}
         </div>
-      )}
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button variant="secondary" onClick={capture} disabled={camera.state !== 'on' || Boolean(prompt)}>
-          <Icon name="camera" className="h-4 w-4" />
-          {shots.length ? 'Retake photos' : 'Take photos'}
-        </Button>
-        <div className="flex gap-2">
-          {shots.map((src, i) => (
-            <img key={i} src={src} alt={`Photo ${i + 1}`} className="h-14 w-14 -scale-x-100 rounded-lg object-cover ring-1 ring-ink-200" />
-          ))}
+
+        {/* Poses checklist and thumbnails */}
+        <div className="flex flex-col">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">Four poses</p>
+          <ol className="mt-2 space-y-2">
+            {POSES.map((pose, k) => {
+              const taken = Boolean(shots[k])
+              const active = step === k
+              return (
+                <li
+                  key={pose.id}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2 ring-1 ring-inset transition-colors duration-300 ${
+                    active ? 'bg-brand-50 ring-brand-200' : taken ? 'bg-kashi-50/60 ring-kashi-100' : 'bg-white ring-ink-200/70'
+                  }`}
+                >
+                  {taken ? (
+                    <img src={shots[k]} alt="" className="h-10 w-10 shrink-0 -scale-x-100 rounded-lg object-cover ring-2 ring-kashi-300" />
+                  ) : (
+                    <span
+                      className={`tabular flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${
+                        active ? 'animate-pulse bg-brand-600 text-white' : 'bg-ink-100 text-ink-500'
+                      }`}
+                    >
+                      {k + 1}
+                    </span>
+                  )}
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-ink-900">{pose.label}</span>
+                    <span className="hidden text-xs text-ink-500 sm:block">{pose.hint}</span>
+                  </span>
+                  {taken && <Icon name="check" className="ml-auto h-4 w-4 shrink-0 text-kashi-600" strokeWidth={2.6} />}
+                </li>
+              )
+            })}
+          </ol>
+          <p className="mt-3 text-xs leading-relaxed text-ink-400">
+            {done ? 'All four photos taken. Save to register the face, or retake if any looks dark or blurry.' : 'Press Take photos; a short countdown starts, then each pose is captured automatically.'}
+          </p>
+          <div className="mt-3">
+            <Alert key={error}>{error}</Alert>
+          </div>
         </div>
-      </div>
-      <div className="mt-3">
-        <Alert key={error}>{error}</Alert>
       </div>
     </Modal>
   )
