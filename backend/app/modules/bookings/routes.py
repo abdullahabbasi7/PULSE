@@ -162,10 +162,13 @@ def update_client(
 # ---------------------------------------------------------------- AI inquiry reader
 
 @router.post("/parse-inquiry", response_model=InquiryOut)
-def parse_inquiry(body: InquiryIn, _: User = Depends(require_roles(*EDIT))) -> dict:
-    """Read a client's message and return the booking details it contains, for review."""
+def parse_inquiry(
+    body: InquiryIn, session: Session = Depends(get_session), user: User = Depends(require_roles(*EDIT))
+) -> dict:
+    """Read a client's message and return the booking details it contains, for review.
+    Day phrases such as "aglay jummay ko" are worked out from the company's own today."""
     reader = get_reader()
-    result = reader.parse(body.text)
+    result = reader.parse(body.text, today=company_today(session, user.company_id))
     metrics = reader.metrics or {}
     result["model"] = {
         "event_type_accuracy": metrics.get("synthetic_test", {}).get("event_type_accuracy"),

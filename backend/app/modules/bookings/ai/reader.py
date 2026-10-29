@@ -28,6 +28,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import FeatureUnion, Pipeline
 
 from app.modules.bookings.ai.data import DISHES, MONTH_ABBR, MONTHS, WEEKDAYS, WEEKDAYS_UR, Example
+from app.modules.bookings.ai.relative_dates import find_relative_date
 
 MODEL_VERSION = 1
 LABELS = ("DATE", "TIME", "GUESTS", "VENUE", "DISH")
@@ -328,7 +329,29 @@ class InquiryReader:
             "phone": None,
             "entities": spans,
         }
-        if (d := first("DATE")) is not None:
+        # 1. A date written out ("14 November", "15/12", "20 tareekh") wins.
+        written = None
+        for d in (s for s in spans if s["label"] == "DATE"):
+            if re.search(r"\d", d["text"]) or any(w in _MONTH_LOOKUP for w in d["text"].lower().split()):
+                written = normalize_date(d["text"], today)
+                if written:
+                    break
+        result["date_note"] = None
+        rel = find_relative_date(text, today)
+        if rel is not None and "next month" in rel.rule:
+            written = None  # "aglay mahine 5 tareekh" is next month's 5th, not this month's
+        if written:
+            result["event_date"] = written.isoformat()
+        elif rel is not None:
+            # 2. Otherwise a day phrase ("aglay jummay ko", "kal", "agle hafte peer")
+            #    is worked out on the calendar from the company's today.
+            result["event_date"] = rel.value.isoformat()
+            result["date_note"] = {"phrase": rel.phrase.strip(), "rule": rel.rule, "today": today.isoformat()}
+            spans = [s for s in spans if not (s["label"] == "DATE" or (s["start"] < rel.end and s["end"] > rel.start))]
+            spans.append({"label": "DATE", "start": rel.start, "end": rel.end, "confidence": 1.0, "text": rel.phrase})
+            spans.sort(key=lambda s: s["start"])
+            result["entities"] = spans
+        elif (d := first("DATE")) is not None:
             parsed = normalize_date(d["text"], today)
             result["event_date"] = parsed.isoformat() if parsed else None
         if (t := first("TIME")) is not None:

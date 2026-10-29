@@ -161,6 +161,12 @@ class Alternative(BaseModel):
     confidence: float
 
 
+class DateNote(BaseModel):
+    phrase: str
+    rule: str
+    today: date
+
+
 class InquiryOut(BaseModel):
     event_type: EventType
     event_type_confidence: float
@@ -171,5 +177,6 @@ class InquiryOut(BaseModel):
     venue: str | None
     menu: list[str]
     phone: str | None
+    date_note: DateNote | None = None
     entities: list[Entity]
     model: dict

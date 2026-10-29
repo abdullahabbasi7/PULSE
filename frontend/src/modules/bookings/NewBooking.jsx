@@ -30,6 +30,7 @@ const SAMPLES = [
   'Assalam o alaikum, beti ki mehndi hai 14 november ko, 350 mehman, Marquee Grand, biryani aur kheer chahiye. 0321 4567890',
   'Hi, we need catering for our annual corporate dinner on 5th December at 7:30 pm, around 120 people at Serena Hotel. Menu: chicken karahi, naan, salad and gulab jamun.',
   'walima next friday raat 8 baje, takreeban 2 sau log, venue Royal Palm lawn, mutton qorma, zarda, raita',
+  'Salam, bhai ki mehndi aglay jummay ko hai, shaam 7 baje, takreeban 250 log, Royal Lawn F-7. Chicken karahi aur gulab jamun chahiye',
 ]
 
 function Highlighted({ text, entities }) {
@@ -76,7 +77,7 @@ function InquiryPanel({ onApply }) {
   const found = result
     ? [
         ['Event', `${EVENT_LABEL[result.event_type]} (${percent(result.event_type_confidence)})`],
-        ['Date', result.event_date ? formatDate(result.event_date, { year: true }) : null],
+        ['Date', result.event_date ? formatDate(result.event_date, { year: true }) : null, result.date_note],
         ['Time', result.start_time ? timeRange(result.start_time) : null],
         ['Guests', result.guest_count],
         ['Venue', result.venue],
@@ -124,10 +125,20 @@ function InquiryPanel({ onApply }) {
             <Highlighted text={result.text} entities={result.entities} />
           </div>
           <dl className="grid grid-cols-[5rem_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-sm">
-            {found.map(([label, value]) => (
+            {found.map(([label, value, note]) => (
               <div key={label} className="contents">
                 <dt className="text-ink-500">{label}</dt>
-                <dd className={value ? 'font-medium text-ink-900' : 'text-ink-400'}>{value ?? 'Not found, fill in by hand'}</dd>
+                <dd className={value ? 'font-medium text-ink-900' : 'text-ink-400'}>
+                  {value ?? 'Not found, fill in by hand'}
+                  {note && (
+                    <span className="mt-1 flex items-start gap-1.5 rounded-lg bg-brand-50 px-2 py-1 text-xs font-normal text-brand-800 ring-1 ring-inset ring-brand-100">
+                      <Icon name="calendar" className="mt-px h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        Worked out from “{note.phrase}”: {note.rule}, counting from today ({formatDate(note.today)}).
+                      </span>
+                    </span>
+                  )}
+                </dd>
               </div>
             ))}
           </dl>
