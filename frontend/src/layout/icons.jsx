@@ -36,6 +36,8 @@ const PATHS = {
   user: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 20c1.2-3.5 4.2-5.5 8-5.5s6.8 2 8 5.5',
   printer: 'M7 9V4h10v5M6 18H4v-7h16v7h-2M7 14h10v6H7z',
   arrowLeft: 'M19 12H5M11 6l-6 6 6 6',
+  arrowRight: 'M5 12h14M13 6l6 6-6 6',
+  arrowUp: 'M12 19V5M6 11l6-6 6 6',
   play: 'M8 5v14l11-7z',
   history: 'M4 12a8 8 0 108-8 8 8 0 00-6.5 3.3M4 4v4h4M12 8v4l3 2',
   scan: 'M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M4 12h16',

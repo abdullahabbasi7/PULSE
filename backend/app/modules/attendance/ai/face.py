@@ -5,6 +5,9 @@
 * Recognition: SFace, a CNN trained with a margin-based loss (like ArcFace) that maps an
   aligned face to a 128-dimensional embedding. Two faces belong to the same person when
   the cosine similarity of their embeddings is above a threshold.
+* Pose guide (registration): the same five landmarks give the head's yaw (left/right turn)
+  and pitch (chin up/down), so each of the four registration poses is only accepted when
+  the person really holds it.
 * Liveness: a head-turn challenge. When a real head turns, the nose moves sideways
   relative to the eyes (3-D parallax). A flat photograph or screen keeps that ratio
   almost constant even when it is tilted or moved, so it fails the check.
@@ -35,6 +38,16 @@ MIN_SHARPNESS = 25.0         # variance of the Laplacian over the face crop
 YAW_RANGE_REQUIRED = 0.16    # nose shift relative to eye distance across the challenge
 MAX_IMAGE_BYTES = 3 * 1024 * 1024
 
+# Registration poses. Yaw and pitch are landmark ratios measured in the face's own frame
+# (so a tilted head does not matter); turns are judged against the person's own frontal
+# photo because faces differ.
+FRONT_MAX_YAW = 0.12         # |yaw| when looking straight at the camera
+FRONT_PITCH = (0.35, 0.80)   # nose between eyes and mouth when the head is level
+TURN_YAW = 0.15              # yaw change for "turn a little to the left/right" (about 20 degrees)
+CHIN_UP_PITCH = 0.07         # pitch drop for "tilt the chin up"
+SIDEWAYS_LIMIT = 0.15        # how far the head may turn while tilting the chin up
+POSES = ("front", "up", "left", "right")
+
 
 class FaceError(ValueError):
     """A problem the user can fix (no face, two faces, too dark...)."""
@@ -53,6 +66,57 @@ class Face:
         eye_mid = (right_eye + left_eye) / 2
         eye_dist = float(np.linalg.norm(left_eye - right_eye)) or 1.0
         return float((nose[0] - eye_mid[0]) / eye_dist)
+
+
+def head_pose(face: Face) -> tuple[float, float]:
+    """(yaw, pitch) of a face from its five landmarks, measured along the eye line.
+
+    yaw   = sideways offset of the nose tip from the middle of the eyes, in eye distances.
+            The camera image is not mirrored, so a positive yaw means the person has turned
+            to *their* left.
+    pitch = how far down the nose sits between the eyes (0) and the mouth (1). Lifting the
+            chin makes the nose tip rise towards the eyes, so pitch gets smaller.
+    """
+    right_eye, left_eye, nose, right_mouth, left_mouth = (p.astype(np.float64) for p in face.landmarks)
+    axis = left_eye - right_eye
+    eye_dist = float(np.linalg.norm(axis)) or 1.0
+    u = axis / eye_dist
+    v = np.array([-u[1], u[0]])
+    eye_mid = (right_eye + left_eye) / 2
+    mouth_mid = (right_mouth + left_mouth) / 2
+    yaw = float(np.dot(nose - eye_mid, u) / eye_dist)
+    pitch = float(np.dot(nose - eye_mid, v) / (np.dot(mouth_mid - eye_mid, v) or 1.0))
+    return round(yaw, 3), round(pitch, 3)
+
+
+def judge_pose(pose: str, yaw: float, pitch: float, baseline: tuple[float, float] | None) -> tuple[bool, float, str]:
+    """Is the head in the requested registration pose? Returns (ok, progress 0..1, hint)."""
+    if pose == "front" or baseline is None:
+        level = FRONT_PITCH[0] <= pitch <= FRONT_PITCH[1]
+        if abs(yaw) <= FRONT_MAX_YAW and level:
+            return True, 1.0, "Hold still"
+        if abs(yaw) > FRONT_MAX_YAW:
+            return False, round(max(0.0, 1 - (abs(yaw) - FRONT_MAX_YAW) / 0.2), 2), "Face the camera straight on"
+        return False, 0.5, "Keep your head level and look at the camera"
+    base_yaw, base_pitch = baseline
+    d_yaw, d_pitch = yaw - base_yaw, pitch - base_pitch
+    if pose == "up":
+        progress = min(1.0, max(0.0, -d_pitch / CHIN_UP_PITCH))
+        if abs(d_yaw) > SIDEWAYS_LIMIT:
+            return False, round(progress, 2), "Keep facing the camera while you lift your chin"
+        if -d_pitch >= CHIN_UP_PITCH:
+            return True, 1.0, "Hold still"
+        return False, round(progress, 2), "Lift your chin a little more" if d_pitch < 0 else "Lift your chin up, not down"
+    if pose in ("left", "right"):
+        sign = 1 if pose == "left" else -1
+        turned = sign * d_yaw
+        progress = min(1.0, max(0.0, turned / TURN_YAW))
+        if turned >= TURN_YAW:
+            return True, 1.0, "Hold still"
+        if turned < -0.04:
+            return False, 0.0, f"Other way: turn to your {pose}"
+        return False, round(progress, 2), f"Turn a little more to your {pose}"
+    raise ValueError(f"Unknown pose {pose!r}")
 
 
 class FaceEngine:

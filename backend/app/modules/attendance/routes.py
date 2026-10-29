@@ -20,7 +20,9 @@ from app.modules.attendance.ai.face import (
     FaceError,
     cosine,
     get_engine,
+    head_pose,
     identify,
+    judge_pose,
     liveness,
 )
 from app.modules.attendance.models import AttendanceLog, FaceEmbedding, StaffMember
@@ -31,6 +33,8 @@ from app.modules.attendance.schemas import (
     EnrollOut,
     LogOut,
     ManualIn,
+    PoseIn,
+    PoseOut,
     Sheet,
     SheetRow,
     StaffIn,
@@ -117,6 +121,31 @@ def delete_face(staff_id: uuid.UUID, session: Session = Depends(get_session), _:
     member.face_enrolled_at = None
     session.flush()
     return member
+
+
+@router.post("/pose", response_model=PoseOut)
+def check_pose(body: PoseIn, _: User = Depends(require_roles(*MANAGE))) -> PoseOut:
+    """Live guide for face registration: is the head in the requested pose yet?
+
+    The browser sends a frame a few times a second; a pose is only ticked once it is held.
+    Nothing is stored.
+    """
+    engine = get_engine()
+    try:
+        img = engine.decode(body.image)
+        faces = engine.detect(img)
+        if not faces:
+            return PoseOut(ok=False, face=False, hint="No face found. Keep your face inside the oval")
+        face = engine.single_face(img)
+        problem = engine.quality_problem(img, face)
+    except FaceError as error:
+        return PoseOut(ok=False, face=False, hint=str(error).rstrip("."))
+    yaw, pitch = head_pose(face)
+    if problem:
+        return PoseOut(ok=False, face=True, yaw=yaw, pitch=pitch, hint=problem.rstrip("."))
+    baseline = (body.baseline.yaw, body.baseline.pitch) if body.baseline else None
+    ok, progress, hint = judge_pose(body.pose, yaw, pitch, baseline)
+    return PoseOut(ok=ok, face=True, yaw=yaw, pitch=pitch, progress=progress, hint=hint)
 
 
 @router.post("/staff/{staff_id}/enroll", response_model=EnrollOut)

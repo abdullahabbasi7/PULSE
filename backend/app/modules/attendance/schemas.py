@@ -43,6 +43,26 @@ class EnrollIn(BaseModel):
     images: list[str] = Field(min_length=3, max_length=6, description="Webcam photos as data URLs")
 
 
+class PoseBaseline(BaseModel):
+    yaw: float = Field(ge=-2, le=2)
+    pitch: float = Field(ge=-2, le=3)
+
+
+class PoseIn(BaseModel):
+    image: str = Field(min_length=100, description="One webcam frame as a data URL")
+    pose: Literal["front", "up", "left", "right"]
+    baseline: PoseBaseline | None = Field(default=None, description="Yaw and pitch of the accepted front photo")
+
+
+class PoseOut(BaseModel):
+    ok: bool
+    face: bool
+    yaw: float | None = None
+    pitch: float | None = None
+    progress: float = 0.0
+    hint: str
+
+
 class EnrollOut(BaseModel):
     staff: StaffOut
     photos_used: int

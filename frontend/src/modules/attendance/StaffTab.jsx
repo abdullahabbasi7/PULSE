@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Alert, Avatar, Badge, Button, Card, EmptyState, Field, Modal, Skeleton, useFormGuard, useToast } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { api, errorText } from '../../lib/api.js'
@@ -68,18 +68,20 @@ function AddStaffModal({ open, onClose, onAdded }) {
 
 const POSES = [
   { id: 'front', label: 'Look straight at the camera', hint: 'Face in the oval, eyes open' },
-  { id: 'up', label: 'Tilt the chin up slightly', hint: 'Just a little, keep looking ahead' },
-  { id: 'left', label: 'Turn a little to the left', hint: 'About a quarter turn' },
-  { id: 'right', label: 'Turn a little to the right', hint: 'About a quarter turn' },
+  { id: 'up', label: 'Tilt the chin up slightly', hint: 'Just a little, keep looking ahead', arrow: 'arrowUp' },
+  { id: 'left', label: 'Turn a little to your left', hint: 'About a quarter turn', arrow: 'arrowLeft' },
+  { id: 'right', label: 'Turn a little to your right', hint: 'About a quarter turn', arrow: 'arrowRight' },
 ]
 
 function EnrollModal({ member, onClose, onDone }) {
   const camera = useCamera({ facingMode: 'user' })
   const [shots, setShots] = useState([])
   const [step, setStep] = useState(-1) // pose being captured, -1 when idle
-  const [count, setCount] = useState(0) // 3-2-1 before the first photo
+  const [count, setCount] = useState(0) // 3-2-1 before the first pose
+  const [live, setLive] = useState(null) // latest pose check: { ok, progress, hint }
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const run = useRef(0) // bumped to stop a capture that is in progress
   const capturing = step >= 0 || count > 0
 
   // The camera starts as soon as the window opens.
@@ -92,22 +94,65 @@ function EnrollModal({ member, onClose, onDone }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [member])
 
+  // Each pose is only accepted when the server sees the head in that pose in two
+  // frames in a row. The front photo is the reference for the turns.
   async function capture() {
+    const me = ++run.current
+    const active = () => run.current === me
     setError('')
     setShots([])
+    setLive(null)
     for (let n = 3; n > 0; n -= 1) {
       setCount(n)
       await sleep(650)
+      if (!active()) return
     }
     setCount(0)
     const taken = []
+    let baseline = null
     for (let k = 0; k < POSES.length; k += 1) {
       setStep(k)
-      await sleep(1100)
-      taken.push(grab(camera.videoRef.current, 720, 0.9))
-      setShots([...taken])
+      setLive(null)
+      let streak = 0
+      let firstOk = null
+      while (active()) {
+        const frame = grab(camera.videoRef.current, 640, 0.85)
+        if (!frame) {
+          await sleep(250)
+          continue
+        }
+        let res
+        try {
+          res = await api('/attendance/pose', { method: 'POST', body: { image: frame, pose: POSES[k].id, baseline } })
+        } catch (err) {
+          if (!active()) return
+          setLive({ ok: false, progress: 0, hint: errorText(err) })
+          await sleep(800)
+          continue
+        }
+        if (!active()) return
+        setLive(res)
+        if (res.ok) {
+          streak += 1
+          firstOk = firstOk || res
+          if (streak >= 2) {
+            taken.push(frame)
+            setShots([...taken])
+            if (k === 0) baseline = { yaw: (firstOk.yaw + res.yaw) / 2, pitch: (firstOk.pitch + res.pitch) / 2 }
+            break
+          }
+        } else {
+          streak = 0
+          firstOk = null
+        }
+        await sleep(150)
+      }
+      if (!active()) return
+      setLive({ ok: true, progress: 1, hint: k < POSES.length - 1 ? 'Got it' : 'All done' })
+      await sleep(650)
     }
     setStep(-1)
+    setLive(null)
   }
 
   async function save() {
@@ -125,7 +170,9 @@ function EnrollModal({ member, onClose, onDone }) {
   }
 
   function close() {
+    run.current += 1
     camera.stop()
+    setLive(null)
     setShots([])
     setStep(-1)
     setCount(0)
@@ -173,7 +220,7 @@ function EnrollModal({ member, onClose, onDone }) {
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div
                   className={`aspect-[3/4] h-[78%] rounded-[50%] border-[3px] shadow-[0_0_0_9999px_rgba(23,28,52,0.35)] transition-colors duration-300 ${
-                    step >= 0 ? 'border-kashi-300' : 'border-white/80'
+                    live?.ok ? 'border-kashi-400' : step >= 0 ? 'border-saffron-300' : 'border-white/80'
                   }`}
                 />
               </div>
@@ -195,9 +242,17 @@ function EnrollModal({ member, onClose, onDone }) {
               </span>
             )}
             {step >= 0 && (
-              <p key={step} className="absolute inset-x-0 bottom-3 animate-fade-in px-3 text-center text-sm font-semibold text-white drop-shadow">
-                {POSES[step].label}
-              </p>
+              <div className="absolute inset-x-3 bottom-3 flex justify-center">
+                <p
+                  className={`flex max-w-full items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-semibold shadow-lg backdrop-blur transition-colors duration-200 ${
+                    live?.ok ? 'bg-kashi-600/90 text-white' : 'bg-white/90 text-ink-900'
+                  }`}
+                >
+                  {POSES[step].arrow && !live?.ok && <Icon name={POSES[step].arrow} className="h-4 w-4 shrink-0 animate-pulse" strokeWidth={2.4} />}
+                  {live?.ok && <Icon name="check" className="h-4 w-4 shrink-0" strokeWidth={2.6} />}
+                  <span className="truncate">{live?.hint || POSES[step].label}</span>
+                </p>
+              </div>
             )}
           </div>
           {camera.error && (
@@ -235,6 +290,11 @@ function EnrollModal({ member, onClose, onDone }) {
                   <span className="min-w-0">
                     <span className="block text-sm font-medium text-ink-900">{pose.label}</span>
                     <span className="hidden text-xs text-ink-500 sm:block">{pose.hint}</span>
+                    {active && !taken && (
+                      <span className="mt-1.5 block h-1 w-28 overflow-hidden rounded-full bg-brand-100">
+                        <span className="block h-full rounded-full bg-brand-600 transition-[width] duration-200" style={{ width: `${Math.round((live?.progress || 0) * 100)}%` }} />
+                      </span>
+                    )}
                   </span>
                   {taken && <Icon name="check" className="ml-auto h-4 w-4 shrink-0 text-kashi-600" strokeWidth={2.6} />}
                 </li>
@@ -242,7 +302,11 @@ function EnrollModal({ member, onClose, onDone }) {
             })}
           </ol>
           <p className="mt-3 text-xs leading-relaxed text-ink-400">
-            {done ? 'All four photos taken. Save to register the face, or retake if any looks dark or blurry.' : 'Press Take photos; a short countdown starts, then each pose is captured automatically.'}
+            {done
+              ? 'All four poses confirmed. Save to register the face, or retake if any looks dark or blurry.'
+              : capturing
+                ? 'Each pose is taken only when the camera sees it. Move slowly and hold the pose for a moment.'
+                : 'Press Take photos and follow the prompts. Each pose is checked by the camera before it is ticked.'}
           </p>
           <div className="mt-3">
             <Alert key={error}>{error}</Alert>
