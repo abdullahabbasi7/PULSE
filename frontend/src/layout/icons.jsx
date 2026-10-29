@@ -1,3 +1,5 @@
+import { useId } from 'react'
+
 // Small outline icons on a 24px grid. Add new ones here as modules need them.
 const PATHS = {
   dashboard: 'M4 5h7v6H4zM13 5h7v4h-7zM13 11h7v8h-7zM4 13h7v6H4z',
@@ -58,18 +60,66 @@ export function Icon({ name, className = 'h-5 w-5', strokeWidth = 1.7 }) {
   )
 }
 
-export function PulseMark({ className = 'h-9 w-9' }) {
+// The PULSE emblem: an eight-pointed kashi star (Multani blue-tile heritage) holding a
+// serving cloche, whose tray is a pulse line — catering events, run live and smart.
+// With `animate`, the pulse line draws itself in and the star turns slowly on hover.
+export function PulseMark({ className = 'h-9 w-9', animate = true }) {
+  const id = useId().replace(/:/g, '')
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
-      <rect width="32" height="32" rx="9" fill="currentColor" />
+    <svg viewBox="0 0 48 48" className={`group/mark ${className}`} role="img" aria-label="PULSE">
+      <defs>
+        <linearGradient id={`${id}-glaze`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#4763e3" />
+          <stop offset="0.55" stopColor="#3048c9" />
+          <stop offset="1" stopColor="#1f2c69" />
+        </linearGradient>
+        <linearGradient id={`${id}-gold`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fdd58a" />
+          <stop offset="1" stopColor="#e7840f" />
+        </linearGradient>
+      </defs>
+      <g
+        className={animate ? 'origin-center transition-transform duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover/mark:rotate-45' : ''}
+        style={{ transformBox: 'fill-box' }}
+      >
+        <rect x="8" y="8" width="32" height="32" rx="3" fill={`url(#${id}-glaze)`} />
+        <rect x="8" y="8" width="32" height="32" rx="3" fill={`url(#${id}-glaze)`} transform="rotate(45 24 24)" />
+      </g>
+      <circle cx="24" cy="24" r="15.2" fill="none" stroke={`url(#${id}-gold)`} strokeWidth="1.1" />
+      {/* cloche */}
+      <path d="M14.5 27.5a9.5 8.6 0 0 1 19 0z" fill="#fff" />
+      <path d="M18 25.2a6.3 6 0 0 1 4.6-5" fill="none" stroke="#c1cffd" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="24" cy="17.6" r="1.7" fill="#fff" />
+      {/* pulse-line tray */}
       <path
-        d="M5 17h5l3-7 4 13 3-9 2 3h5"
+        d="M11.5 30.5h8l1.8-2.6 2.6 5 2.2-3.6 1.4 1.2h9"
         fill="none"
         stroke="#fff"
-        strokeWidth="2.4"
+        strokeWidth="1.9"
         strokeLinecap="round"
         strokeLinejoin="round"
+        pathLength="1"
+        className={animate ? 'mark-pulse' : ''}
       />
     </svg>
+  )
+}
+
+// Emblem with the wordmark, for headers and sign-in screens.
+export function PulseLogo({ className = '', size = 'md', tagline = true }) {
+  const mark = size === 'lg' ? 'h-12 w-12' : 'h-10 w-10'
+  const word = size === 'lg' ? 'text-[1.7rem]' : 'text-[1.4rem]'
+  return (
+    <span className={`inline-flex items-center gap-3 ${className}`}>
+      <PulseMark className={`${mark} shrink-0 drop-shadow-[0_6px_10px_rgba(48,72,201,0.28)]`} />
+      <span className="leading-none">
+        <span className={`block font-display tracking-[0.22em] text-ink-900 ${word}`}>PULSE</span>
+        {tagline && (
+          <span className="mt-1.5 block text-[9.5px] font-semibold uppercase tracking-[0.24em] text-brand-700/80">
+            Smart event logistics
+          </span>
+        )}
+      </span>
+    </span>
   )
 }

@@ -198,3 +198,54 @@
 .marquee:hover .marquee-track {
   animation-play-state: paused;
 }
+
+/* The emblem's pulse-line tray draws itself in, then beats gently. */
+@keyframes mark-draw {
+  0% { stroke-dashoffset: 1; }
+  35%, 100% { stroke-dashoffset: 0; }
+}
+.mark-pulse {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: mark-draw 4.5s cubic-bezier(0.6, 0, 0.2, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mark-pulse { animation: none !important; stroke-dashoffset: 0; }
+}
+
+/* Event illustrations behind the app (components/EventBackdrop.jsx). */
+@keyframes motif-float {
+  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+  50% { transform: translateY(-18px) rotate(calc(var(--rot, 0deg) * -1)); }
+}
+.backdrop-motif {
+  animation: motif-float 10s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.7); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+.twinkle,
+.twinkle-core {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twinkle 3.2s ease-in-out infinite;
+}
+.twinkle-core {
+  animation-duration: 3.2s;
+}
+@keyframes bulb-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.bulb {
+  animation: bulb-glow 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .backdrop-motif,
+  .twinkle,
+  .twinkle-core,
+  .bulb {
+    animation: none !important;
+  }
+}

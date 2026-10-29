@@ -3,8 +3,9 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { Avatar } from '../components/ui/index.js'
 import { ROLE_LABELS } from '../lib/roles.js'
-import { Icon, PulseMark } from './icons.jsx'
+import { Icon, PulseLogo } from './icons.jsx'
 import { NAV_ITEMS, NAV_SECTIONS } from './nav.js'
+import { EventBackdrop } from '../components/EventBackdrop.jsx'
 
 // Sidebar links with a highlight that slides to the active page.
 function SidebarNav({ items, onNavigate }) {
@@ -54,9 +55,9 @@ function SidebarNav({ items, onNavigate }) {
                   <>
                     <Icon
                       name={item.icon}
-                      className={`h-5 w-5 transition-colors ${isActive ? 'text-brand-600' : 'text-ink-400 group-hover:text-ink-600'}`}
+                      className={`h-5 w-5 transition-[color,transform] duration-300 group-hover:scale-110 ${isActive ? 'text-brand-600' : 'text-ink-400 group-hover:-rotate-6 group-hover:text-brand-600'}`}
                     />
-                    <span className="flex-1">{item.label}</span>
+                    <span className="flex-1 transition-transform duration-300 group-hover:translate-x-1">{item.label}</span>
                     {item.module && (
                       <span
                         className={`tabular rounded-md px-1.5 py-0.5 text-[11px] font-semibold transition-colors ${
@@ -79,13 +80,9 @@ function SidebarNav({ items, onNavigate }) {
 
 function Brand() {
   return (
-    <div className="flex items-center gap-2.5 px-6 pb-4 pt-6 text-brand-600">
-      <PulseMark />
-      <div className="leading-none">
-        <span className="font-display text-xl tracking-wide text-ink-900">PULSE</span>
-        <p className="mt-1 text-[11px] text-ink-400">Smart event logistics</p>
-      </div>
-    </div>
+    <Link to="/dashboard" className="flex items-center px-6 pb-4 pt-6">
+      <PulseLogo />
+    </Link>
   )
 }
 
@@ -189,9 +186,10 @@ export function AppLayout() {
   }, [current])
 
   return (
-    <div className="min-h-screen lg:flex">
+    <div className="relative min-h-screen lg:flex">
+      <EventBackdrop className="z-0" lightsTop={64} />
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-ink-200/70 bg-white lg:flex">
+      <aside className="sticky top-0 z-10 hidden h-screen w-72 shrink-0 flex-col border-r border-ink-200/70 bg-white/90 backdrop-blur lg:flex">
         <Brand />
         <CompanyChip company={company} />
         <SidebarNav items={items} />
@@ -224,7 +222,7 @@ export function AppLayout() {
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-ink-200/60 bg-white/75 px-4 backdrop-blur-xl backdrop-saturate-150 sm:px-6 lg:px-10">
           <button
             type="button"

@@ -1,7 +1,8 @@
 import { KashiTiles } from '../components/KashiTiles.jsx'
-import { PulseMark } from '../layout/icons.jsx'
+import { PulseLogo } from '../layout/icons.jsx'
 import { AuthShowcase } from '../components/AuthShowcase.jsx'
 import { Aurora, Marquee } from '../components/ui/index.js'
+import { EventBackdrop, SIDE_MOTIFS } from '../components/EventBackdrop.jsx'
 
 // What the whole platform does, grouped from the 12 modules in the proposal.
 const HIGHLIGHTS = [
@@ -57,10 +58,7 @@ export function AuthShell({ title, subtitle, children, footer }) {
         <Aurora />
 
         <div className="relative flex h-full flex-col gap-6 px-12 py-10 xl:px-16 [@media(max-height:820px)]:gap-4 [@media(max-height:820px)]:py-7">
-          <div className="flex items-center gap-2.5 text-brand-600">
-            <PulseMark className="h-10 w-10" />
-            <span className="font-display text-2xl tracking-wide text-ink-900">PULSE</span>
-          </div>
+          <PulseLogo size="lg" />
 
           <div className="max-w-xl animate-page-in [animation-delay:300ms]">
             <h2 className="font-display text-[2.4rem] leading-[1.1] text-ink-900 xl:text-[2.75rem] [@media(max-height:820px)]:text-[2.1rem]">
@@ -100,6 +98,7 @@ export function AuthShell({ title, subtitle, children, footer }) {
       </div>
 
       <div className="relative flex items-center justify-center overflow-hidden px-5 py-12 sm:px-8">
+        <EventBackdrop className="z-0 hidden lg:block" motifs={SIDE_MOTIFS} lights={false} />
         {/* A faint corner of tiles on small screens, where the big panel is hidden. */}
         <KashiTiles
           cols={4}
@@ -109,13 +108,10 @@ export function AuthShell({ title, subtitle, children, footer }) {
           accentClass="stroke-kashi-300"
           diamondClass="stroke-brand-100"
         />
-        <div className="relative w-full max-w-[25rem] animate-page-in">
-          <div className="mb-10 flex items-center gap-2.5 text-brand-600 lg:hidden">
-            <PulseMark className="h-10 w-10" />
-            <div>
-              <span className="font-display text-2xl tracking-wide text-ink-900">PULSE</span>
-              <p className="text-xs text-ink-500">Predictive Unified Logistics for Smart Events</p>
-            </div>
+        <div className="relative z-10 w-full max-w-[25rem] animate-page-in">
+          <div className="mb-10 lg:hidden">
+            <PulseLogo />
+            <p className="mt-2 text-xs text-ink-500">Predictive Unified Logistics for Smart Events</p>
           </div>
           <h1 className="font-display text-[2.1rem] leading-tight text-ink-900">{title}</h1>
           {subtitle && <p className="mt-2 text-[0.95rem] text-ink-500">{subtitle}</p>}

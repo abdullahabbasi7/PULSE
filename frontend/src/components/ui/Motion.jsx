@@ -87,8 +87,12 @@ export function CountUp({ value, duration = 1100, className = '' }) {
       setShown(value)
       return undefined
     }
-    if (reduced || !seen) {
-      if (reduced) setShown(target)
+    if (reduced) {
+      setShown(target)
+      return undefined
+    }
+    if (!seen) {
+      setShown(0)
       return undefined
     }
     let raf

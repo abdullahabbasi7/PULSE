@@ -23,12 +23,13 @@ export function useReducedMotion() {
   return reduced
 }
 
-// Becomes true once the element has scrolled into view (and stays true).
-export function useInView(ref, { rootMargin = '0px 0px -8% 0px' } = {}) {
+// True while the element is on screen. With `once`, it stays true after the first time;
+// otherwise it turns false again when the element leaves, so animations replay on every scroll.
+export function useInView(ref, { rootMargin = '0px 0px -8% 0px', once = false } = {}) {
   const [seen, setSeen] = useState(false)
   useEffect(() => {
     const el = ref.current
-    if (!el || seen) return undefined
+    if (!el) return undefined
     if (typeof IntersectionObserver === 'undefined') {
       setSeen(true)
       return undefined
@@ -37,13 +38,15 @@ export function useInView(ref, { rootMargin = '0px 0px -8% 0px' } = {}) {
       ([entry]) => {
         if (entry.isIntersecting) {
           setSeen(true)
-          observer.disconnect()
+          if (once) observer.disconnect()
+        } else if (!once) {
+          setSeen(false)
         }
       },
       { rootMargin },
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [ref, seen, rootMargin])
+  }, [ref, rootMargin, once])
   return seen
 }
