@@ -35,6 +35,7 @@ function AddStaffModal({ open, onClose, onAdded }) {
     <Modal
       open={open}
       onClose={onClose}
+      icon="user"
       title="Add staff member"
       description="Waiters, cooks, helpers and drivers who work at events. They do not need a login."
       footer={
@@ -107,6 +108,7 @@ function EnrollModal({ member, onClose, onDone }) {
     <Modal
       open={Boolean(member)}
       onClose={close}
+      icon="camera"
       title="Register face"
       description={member ? `Four quick photos of ${member.full_name} in good light, one face in view.` : ''}
       size="lg"
@@ -190,7 +192,7 @@ export function StaffTab({ staff, setStaff, error, canManage }) {
         {!staff && !error && <Skeleton className="h-40 w-full" />}
         {staff?.length === 0 && <EmptyState title="No staff yet" icon="badge">Add the people who work at your events, then register their faces for check-in.</EmptyState>}
         {staff?.length > 0 && (
-          <ul className="-mx-5 divide-y divide-ink-100 border-t border-ink-100 sm:-mx-6">
+          <ul className="divide-y divide-ink-100 border-t border-ink-100">
             {staff.map((s) => (
               <li key={s.id} className={`flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3.5 sm:px-6 ${s.is_active ? '' : 'opacity-60'}`}>
                 <Avatar name={s.full_name} />

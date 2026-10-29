@@ -65,6 +65,7 @@ function EditModal({ booking, open, onClose, onSaved }) {
     <Modal
       open={open}
       onClose={onClose}
+      icon="calendar"
       title="Edit booking"
       size="lg"
       footer={

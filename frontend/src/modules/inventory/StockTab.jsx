@@ -51,6 +51,7 @@ function ItemModal({ item, open, onClose, onSaved }) {
     <Modal
       open={open}
       onClose={close}
+      icon="box"
       title={item ? 'Edit item' : 'Add item'}
       description={item ? undefined : 'Each item gets its own QR label. Use one item per batch, e.g. "White dinner plates (gold rim)".'}
       footer={
@@ -80,6 +81,7 @@ function Labels({ items, open, onClose }) {
     <Modal
       open={open}
       onClose={onClose}
+      icon="qr"
       title="QR labels"
       description="Print and stick one label on each crate or batch. Scanning a label picks the item instantly."
       size="lg"

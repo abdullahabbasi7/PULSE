@@ -203,6 +203,7 @@ function ResetPasswordModal({ member, onClose }) {
     <Modal
       open={Boolean(member)}
       onClose={onClose}
+      icon="lock"
       title="Reset password"
       description={member ? `Set a temporary password for ${member.full_name} and share it with them in person. This also unlocks a locked account.` : ''}
       size="sm"

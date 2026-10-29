@@ -35,6 +35,7 @@ function ManualModal({ open, onClose, staff, onSaved }) {
     <Modal
       open={open}
       onClose={onClose}
+      icon="edit"
       title="Mark by hand"
       description="For when the camera is not available. A reason is required and the entry is flagged as manual."
       size="sm"
