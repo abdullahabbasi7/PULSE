@@ -1,22 +1,27 @@
 import { KashiTiles } from '../components/KashiTiles.jsx'
 import { PulseMark } from '../layout/icons.jsx'
+import { AuthShowcase } from '../components/AuthShowcase.jsx'
 
 // What the whole platform does, grouped from the 12 modules in the proposal.
 const HIGHLIGHTS = [
   {
     title: 'Bookings, quotations and the live event board',
+    short: 'Bookings & live board',
     text: 'Smart booking, menu recommendations and instant quotes, with every event of the day on one board.',
   },
   {
     title: 'Kitchen, inventory and fleet',
+    short: 'Kitchen, inventory & fleet',
     text: 'Deep-learning demand forecasts, QR-tracked crockery and optimised delivery routes.',
   },
   {
     title: 'Staff, resources and finance',
+    short: 'Staff & finance',
     text: 'Face-recognition attendance, automatic resource allocation and an OCR ledger that flags unusual spending.',
   },
   {
     title: 'Clients and growth',
+    short: 'Clients & growth',
     text: 'An AI event concierge, generative decor designs, marketing automation and an owner command dashboard.',
   },
 ]
@@ -35,7 +40,8 @@ const NAME = [
 export function AuthShell({ title, subtitle, children, footer }) {
   return (
     <div className="grid min-h-screen bg-white lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-      <div className="relative hidden overflow-hidden bg-gradient-to-br from-brand-100 via-brand-50 to-kashi-50 lg:block">
+      {/* The panel stays the height of the screen while a long form scrolls beside it. */}
+      <div className="relative hidden h-screen self-start overflow-hidden bg-gradient-to-br from-brand-100 via-brand-50 to-kashi-50 lg:sticky lg:top-0 lg:block">
         <KashiTiles
           animate
           cols={9}
@@ -46,16 +52,18 @@ export function AuthShell({ title, subtitle, children, footer }) {
           diamondClass="stroke-brand-200"
         />
         {/* Clear porcelain behind the text so it stays easy to read. */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(246,247,251,0.97)_30%,rgba(246,247,251,0.55)_62%,rgba(246,247,251,0)_90%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(246,247,251,0.97)_30%,rgba(246,247,251,0.6)_65%,rgba(246,247,251,0.15)_100%)]" />
+        <div className="absolute -right-24 top-1/3 h-72 w-72 rounded-full bg-kashi-200/40 blur-3xl" aria-hidden="true" />
+        <div className="absolute -left-20 bottom-10 h-64 w-64 rounded-full bg-brand-200/40 blur-3xl" aria-hidden="true" />
 
-        <div className="relative flex h-full min-h-screen flex-col justify-between gap-10 p-12 xl:p-16 [@media(max-height:800px)]:py-9">
+        <div className="relative flex h-full flex-col gap-6 px-12 py-10 xl:px-16 [@media(max-height:820px)]:gap-4 [@media(max-height:820px)]:py-7">
           <div className="flex items-center gap-2.5 text-brand-600">
             <PulseMark className="h-10 w-10" />
             <span className="font-display text-2xl tracking-wide text-ink-900">PULSE</span>
           </div>
 
-          <div className="max-w-xl animate-page-in [animation-delay:500ms]">
-            <h2 className="font-display text-[2.5rem] leading-[1.1] text-ink-900 xl:text-[2.9rem] [@media(max-height:800px)]:text-[2.25rem]">
+          <div className="max-w-xl animate-page-in [animation-delay:300ms]">
+            <h2 className="font-display text-[2.4rem] leading-[1.1] text-ink-900 xl:text-[2.75rem] [@media(max-height:820px)]:text-[2.1rem]">
               {NAME.map(([initial, rest]) => (
                 <span key={rest} className="mr-[0.25em] inline-block">
                   {initial && <span className="text-brand-600">{initial}</span>}
@@ -63,25 +71,29 @@ export function AuthShell({ title, subtitle, children, footer }) {
                 </span>
               ))}
             </h2>
-            <p className="mt-4 text-lg font-medium text-brand-800">An AI-Driven Management Platform for Catering Enterprises</p>
-            <ul className="mt-9 space-y-4 [@media(max-height:800px)]:mt-7 [@media(max-height:800px)]:space-y-3">
-              {HIGHLIGHTS.map((item) => (
-                <li key={item.title} className="flex gap-3.5">
-                  <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-kashi-500 text-white">
-                    <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M5 12.5l4.5 4.5L19 7.5" />
-                    </svg>
-                  </span>
-                  <div>
-                    <p className="font-semibold text-ink-900">{item.title}</p>
-                    <p className="mt-0.5 text-sm leading-relaxed text-ink-600">{item.text}</p>
-                  </div>
+            <p className="mt-3 text-lg font-medium text-brand-800">An AI-Driven Management Platform for Catering Enterprises</p>
+          </div>
+
+          <div className="flex min-h-0 flex-1 items-center">
+            <AuthShowcase />
+          </div>
+
+          <div className="space-y-4">
+            <ul className="flex flex-wrap gap-2">
+              {HIGHLIGHTS.map((item, i) => (
+                <li
+                  key={item.title}
+                  title={item.text}
+                  className="inline-flex animate-chip-in items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-semibold text-ink-700 shadow-sm ring-1 ring-ink-200/70"
+                  style={{ animationDelay: `${1700 + i * 120}ms` }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-kashi-500" />
+                  {item.short}
                 </li>
               ))}
             </ul>
+            <p className="text-sm text-ink-500">Final Year Project, BS Artificial Intelligence, SZABIST Islamabad</p>
           </div>
-
-          <p className="text-sm text-ink-500">Final Year Project, BS Artificial Intelligence, SZABIST Islamabad</p>
         </div>
       </div>
 

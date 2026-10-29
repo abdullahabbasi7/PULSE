@@ -9,9 +9,9 @@ import { AuthShell } from './AuthShell.jsx'
 
 const EMPTY = { company_name: '', city: '', phone: '', owner_name: '', email: '', mobile: '', password: '', confirm: '' }
 
-function Group({ title, children }) {
+function Group({ title, children, delay = 0 }) {
   return (
-    <fieldset className="space-y-4">
+    <fieldset className="animate-page-in space-y-4" style={{ animationDelay: `${delay}ms` }}>
       <legend className="mb-4 text-sm font-semibold text-ink-900">{title}</legend>
       {children}
     </fieldset>
@@ -112,14 +112,14 @@ export function SignupPage() {
       }
     >
       <form className="space-y-8" onSubmit={submit} noValidate>
-        <Group title="Your company">
+        <Group title="Your company" delay={120}>
           <Field id="company_name" label="Company name" placeholder="e.g. Royal Caterers" required value={form.company_name} onChange={update('company_name')} />
           <div className="grid grid-cols-2 gap-3">
             <Field id="city" label="City" placeholder="Your city" value={form.city} onChange={update('city')} />
             <Field id="phone" label="Office phone" type="tel" placeholder="Optional" value={form.phone} onChange={update('phone')} />
           </div>
         </Group>
-        <Group title="Your owner account">
+        <Group title="Your owner account" delay={240}>
           <Field id="owner_name" label="Full name" autoComplete="name" required value={form.owner_name} onChange={update('owner_name')} />
           <Field id="email" label="Email" type="email" autoComplete="email" required value={form.email} onChange={update('email')} />
           <Field
