@@ -1,5 +1,5 @@
 // Background illustrations for the whole app: a festoon of string lights with twinkling
-// bulbs, and line drawings of an event (chandelier, cloche, glasses, plate and cutlery,
+// bulbs, and line drawings of an event (teapot, cloche, glasses, plate and cutlery,
 // tiered cake, lantern, marquee tent). They float gently on their own and drift at
 // different speeds as the page scrolls (parallax). Drawn in code: original, sharp, light.
 import { useEffect, useRef } from 'react'
@@ -8,17 +8,16 @@ import { useReducedMotion } from '../lib/motion.js'
 const STROKE = { fill: 'none', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }
 
 const ART = {
-  chandelier: (
+  teapot: (
     <g {...STROKE}>
-      <path d="M50 2v18M30 20h40" />
-      <path d="M18 38c6 10 22 12 32 4 10 8 26 6 32-4" />
-      <path d="M30 20c-8 4-12 12-12 18M70 20c8 4 12 12 12 18M50 20v22" />
-      {[18, 34, 50, 66, 82].map((x) => (
-        <g key={x}>
-          <path d={`M${x} ${x === 50 ? 42 : 38}v6`} />
-          <path d={`M${x} ${x === 50 ? 48 : 44}c-3 4 3 8 0 12`} className="bulb" />
-        </g>
-      ))}
+      <path d="M30 62c-7-12-5-30 20-30s27 18 20 30z" />
+      <path d="M38 32c1-7 23-7 24 0" />
+      <circle cx="50" cy="21.5" r="3.2" />
+      <path d="M31 44c-9-1-14-7-17-14l-4 1c3 10 10 19 20 22" />
+      <path d="M69 39c13-3 17 14 1 17" />
+      <path d="M36 48c5 3 23 3 28 0" />
+      <path d="M24 64h52" />
+      <path d="M12 24c-3-4 3-7 0-11M20 22c-3-4 3-7 0-11" className="bulb" />
     </g>
   ),
   cloche: (
@@ -72,7 +71,7 @@ const ART = {
 
 // Each motif: where it sits, how big, its colour, how fast it drifts with scrolling.
 const MOTIFS = [
-  { art: 'chandelier', left: '62%', top: '44%', w: 130, tone: 'text-brand-200', depth: 0.06, float: 9, rot: -2 },
+  { art: 'teapot', left: '62%', top: '44%', w: 130, tone: 'text-brand-200', depth: 0.06, float: 9, rot: -2 },
   { art: 'cloche', left: '86%', top: '28%', w: 120, tone: 'text-kashi-300', depth: 0.12, float: 11, rot: 4 },
   { art: 'glasses', left: '35%', top: '48%', w: 96, tone: 'text-saffron-300', depth: 0.18, float: 8, rot: -6 },
   { art: 'plate', left: '74%', top: '68%', w: 112, tone: 'text-brand-200', depth: 0.1, float: 12, rot: 6 },
