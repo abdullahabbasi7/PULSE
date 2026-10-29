@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider.jsx'
-import { Alert, Button, Card, CONTROL, Field, Modal, PageHeader, Skeleton, useToast } from '../../components/ui/index.js'
+import { Alert, Button, Card, CONTROL, Field, Modal, PageHeader, Skeleton, useFormGuard, useToast } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { api, errorText } from '../../lib/api.js'
 import { formatDate, formatDateTime, formatMoney, formatNumber, timeRange } from '../../lib/format.js'
@@ -18,6 +18,7 @@ const ACTION_TEXT = {
 }
 
 function EditModal({ booking, open, onClose, onSaved }) {
+  const guard = useFormGuard()
   const [form, setForm] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -35,6 +36,11 @@ function EditModal({ booking, open, onClose, onSaved }) {
   const set = (key) => (e) => setForm({ ...current, [key]: e.target.value })
 
   async function save() {
+    if (!guard()) return
+    if (current.start_time && current.end_time && current.end_time <= current.start_time) {
+      setError('The end time must be after the start time.')
+      return
+    }
     setBusy(true)
     setError('')
     try {
@@ -76,13 +82,13 @@ function EditModal({ booking, open, onClose, onSaved }) {
       }
     >
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field id="e_date" label="Date" type="date" value={current.event_date} onChange={set('event_date')} />
-        <Field id="e_start" label="Start" type="time" value={current.start_time} onChange={set('start_time')} />
-        <Field id="e_end" label="End" type="time" value={current.end_time} onChange={set('end_time')} />
-        <Field id="e_venue" label="Venue" value={current.venue} onChange={set('venue')} className="sm:col-span-2" />
-        <Field id="e_guests" label="Guests" type="number" min="1" value={current.guest_count} onChange={set('guest_count')} />
+        <Field id="e_date" kind="date" required label="Date" type="date" value={current.event_date} onChange={set('event_date')} />
+        <Field id="e_start" kind="time" label="Start" type="time" value={current.start_time} onChange={set('start_time')} />
+        <Field id="e_end" kind="time" label="End" type="time" value={current.end_time} onChange={set('end_time')} />
+        <Field id="e_venue" kind="words" required label="Venue" value={current.venue} onChange={set('venue')} className="sm:col-span-2" />
+        <Field id="e_guests" kind="count" required label="Guests" type="text" inputMode="numeric" value={current.guest_count} onChange={set('guest_count')} />
         <Field id="e_package" label="Package" value={current.package} onChange={set('package')} />
-        <Field id="e_amount" label="Quoted amount" type="number" min="0" value={current.quoted_amount} onChange={set('quoted_amount')} />
+        <Field id="e_amount" kind="money" label="Quoted amount" type="text" inputMode="numeric" value={current.quoted_amount} onChange={set('quoted_amount')} />
         <div className="sm:col-span-3">
           <label htmlFor="e_menu" className="mb-1.5 block text-sm font-medium text-ink-700">Menu</label>
           <textarea id="e_menu" className={`${CONTROL} min-h-[4rem]`} value={current.menu} onChange={set('menu')} />

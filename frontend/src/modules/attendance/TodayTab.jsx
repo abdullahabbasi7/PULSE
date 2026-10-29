@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider.jsx'
-import { Alert, Avatar, Badge, Button, Card, CONTROL_INLINE, CountUp, Field, Modal, SelectField, Skeleton, useToast } from '../../components/ui/index.js'
+import { Alert, Avatar, Badge, Button, Card, CONTROL_INLINE, CountUp, Field, Modal, SelectField, Skeleton, useFormGuard, useToast } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { api, apiDownload, errorText } from '../../lib/api.js'
 import { addDays, formatDate, percent } from '../../lib/format.js'
@@ -14,11 +14,13 @@ const STATUS = {
 }
 
 function ManualModal({ open, onClose, staff, onSaved }) {
+  const guard = useFormGuard()
   const [form, setForm] = useState({ staff_id: '', kind: 'in', note: '' })
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
   async function save() {
+    if (!guard()) return
     setBusy(true)
     setError('')
     try {
@@ -49,7 +51,7 @@ function ManualModal({ open, onClose, staff, onSaved }) {
       <div className="space-y-4">
         <SelectField id="m_staff" label="Staff member" options={[{ value: '', label: 'Choose' }, ...(staff || []).filter((s) => s.is_active).map((s) => ({ value: s.id, label: s.full_name }))]} value={form.staff_id} onChange={set('staff_id')} />
         <SelectField id="m_kind" label="Entry" options={[{ value: 'in', label: 'Check in (now)' }, { value: 'out', label: 'Check out (now)' }]} value={form.kind} onChange={set('kind')} />
-        <Field id="m_note" label="Reason" placeholder="e.g. Camera not working at venue" value={form.note} onChange={set('note')} />
+        <Field id="m_note" kind="words" required label="Reason" placeholder="e.g. Camera not working at venue" value={form.note} onChange={set('note')} />
         <Alert key={error}>{error}</Alert>
       </div>
     </Modal>
@@ -58,6 +60,7 @@ function ManualModal({ open, onClose, staff, onSaved }) {
 
 export function TodayTab({ today, staff, canManage, canExport }) {
   const toast = useToast()
+  const guard = useFormGuard()
   const { company } = useAuth()
   const [day, setDay] = useState(today)
   const [lateAfter, setLateAfter] = useState('09:30')
@@ -69,6 +72,11 @@ export function TodayTab({ today, staff, canManage, canExport }) {
   const s = sheet.data
 
   async function exportCsv() {
+    if (!guard(document.getElementById('exp_from')?.closest('section'))) return
+    if (range.to < range.from) {
+      toast('The "To" date must be on or after the "From" date.', 'danger')
+      return
+    }
     setExporting(true)
     try {
       await apiDownload(`/attendance/export${query({ date_from: range.from, date_to: range.to })}`, `attendance_${range.from}_to_${range.to}.csv`)
@@ -176,8 +184,8 @@ export function TodayTab({ today, staff, canManage, canExport }) {
           {canExport && (
             <Card title="Wages report" description="Days present and wages earned per person, as a CSV for the accounts team.">
               <div className="flex flex-wrap items-end gap-3">
-                <Field id="exp_from" label="From" type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })} />
-                <Field id="exp_to" label="To" type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })} />
+                <Field id="exp_from" kind="date" required label="From" type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })} />
+                <Field id="exp_to" kind="date" required label="To" type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })} />
                 <Button variant="secondary" onClick={exportCsv} loading={exporting}>
                   <Icon name="download" className="h-4 w-4" />
                   Download CSV

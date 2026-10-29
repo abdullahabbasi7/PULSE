@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
-import { Alert, Avatar, Badge, Button, Card, CONTROL, Field, Modal, PageHeader, PasswordStrength, SelectField, Skeleton, useToast } from '../components/ui/index.js'
+import { Alert, Avatar, Badge, Button, Card, CONTROL, Field, Modal, PageHeader, PasswordStrength, SelectField, Skeleton, useFormGuard, useToast } from '../components/ui/index.js'
 import { Icon } from '../layout/icons.jsx'
 import { api, errorText } from '../lib/api.js'
 import { isStrong } from '../lib/passwordRules.js'
@@ -28,6 +28,7 @@ function Collapse({ open, children }) {
 }
 
 function AddMemberForm({ canAddOwner, onAdded, onCancel }) {
+  const guard = useFormGuard()
   const [form, setForm] = useState(EMPTY)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -37,6 +38,7 @@ function AddMemberForm({ canAddOwner, onAdded, onCancel }) {
   async function submit(event) {
     event.preventDefault()
     setError('')
+    if (!guard(event.currentTarget)) return
     if (!isStrong(form.password, { email: form.email, fullName: form.full_name })) {
       setError('The temporary password must meet every rule in the checklist.')
       return
@@ -63,9 +65,9 @@ function AddMemberForm({ canAddOwner, onAdded, onCancel }) {
       className="mb-6"
     >
       <form className="grid gap-4 md:grid-cols-2" onSubmit={submit} noValidate>
-        <Field id="member_name" label="Full name" required value={form.full_name} onChange={update('full_name')} />
-        <Field id="member_email" label="Email" type="email" required value={form.email} onChange={update('email')} />
-        <Field id="member_phone" label="Mobile number" type="tel" placeholder="0300 1234567" hint="Optional. Lets them sign in with their number." value={form.phone} onChange={update('phone')} />
+        <Field id="member_name" kind="personName" label="Full name" required value={form.full_name} onChange={update('full_name')} />
+        <Field id="member_email" kind="email" label="Email" type="email" required value={form.email} onChange={update('email')} />
+        <Field id="member_phone" kind="phone" label="Mobile number" type="tel" placeholder="0300 1234567" hint="Optional. Lets them sign in with their number." value={form.phone} onChange={update('phone')} />
         <SelectField id="member_role" label="Role" options={roleOptions} value={form.role} onChange={update('role')} />
         <div className="md:col-span-2">
           <Field id="member_password" label="Temporary password" type="password" autoComplete="new-password" required value={form.password} onChange={update('password')} />
@@ -175,6 +177,7 @@ function MemberRow({ member, isSelf, canEdit, canReset, onChanged, onReset }) {
 
 function ResetPasswordModal({ member, onClose }) {
   const toast = useToast()
+  const guard = useFormGuard()
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -186,6 +189,7 @@ function ResetPasswordModal({ member, onClose }) {
 
   async function submit(event) {
     event?.preventDefault()
+    if (!guard()) return
     setBusy(true)
     setError('')
     try {
@@ -215,7 +219,7 @@ function ResetPasswordModal({ member, onClose }) {
       }
     >
       <form onSubmit={submit} noValidate className="space-y-3">
-        <Field id="reset_password" label="New temporary password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Field id="reset_password" required label="New temporary password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
         {member && <PasswordStrength password={password} email={member.email} fullName={member.full_name} onSuggest={setPassword} />}
         <Alert key={error}>{error}</Alert>
       </form>

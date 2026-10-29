@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
-import { Alert, Button, Field, PasswordStrength } from '../components/ui/index.js'
+import { Alert, Button, Field, PasswordStrength, useFormGuard } from '../components/ui/index.js'
 import { Icon } from '../layout/icons.jsx'
 import { errorText } from '../lib/api.js'
 import { isStrong } from '../lib/passwordRules.js'
@@ -57,6 +57,7 @@ export function SignupPage() {
   const { status, signup } = useAuth()
   const [form, setForm] = useState(EMPTY)
   const [sent, setSent] = useState(null)
+  const guard = useFormGuard()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -71,6 +72,7 @@ export function SignupPage() {
   async function submit(event) {
     event.preventDefault()
     setError('')
+    if (!guard(event.currentTarget)) return
     if (!strong) {
       setError('Choose a stronger password: it must meet every rule in the checklist.')
       return
@@ -113,17 +115,17 @@ export function SignupPage() {
     >
       <form className="space-y-8" onSubmit={submit} noValidate>
         <Group title="Your company" delay={120}>
-          <Field id="company_name" label="Company name" placeholder="e.g. Royal Caterers" required value={form.company_name} onChange={update('company_name')} />
+          <Field id="company_name" kind="companyName" label="Company name" placeholder="e.g. Royal Caterers" required value={form.company_name} onChange={update('company_name')} />
           <div className="grid grid-cols-2 gap-3">
-            <Field id="city" label="City" placeholder="Your city" value={form.city} onChange={update('city')} />
-            <Field id="phone" label="Office phone" type="tel" placeholder="Optional" value={form.phone} onChange={update('phone')} />
+            <Field id="city" kind="place" label="City" placeholder="Your city" value={form.city} onChange={update('city')} />
+            <Field id="phone" kind="phone" label="Office phone" type="tel" placeholder="Optional" value={form.phone} onChange={update('phone')} />
           </div>
         </Group>
         <Group title="Your owner account" delay={240}>
-          <Field id="owner_name" label="Full name" autoComplete="name" required value={form.owner_name} onChange={update('owner_name')} />
-          <Field id="email" label="Email" type="email" autoComplete="email" required value={form.email} onChange={update('email')} />
+          <Field id="owner_name" kind="personName" label="Full name" autoComplete="name" required value={form.owner_name} onChange={update('owner_name')} />
+          <Field id="email" kind="email" label="Email" type="email" autoComplete="email" required value={form.email} onChange={update('email')} />
           <Field
-            id="mobile"
+            id="mobile" kind="phone"
             label="Mobile number"
             type="tel"
             autoComplete="tel"
@@ -150,7 +152,7 @@ export function SignupPage() {
         </Group>
         <div className="space-y-4">
           <Alert key={error}>{error}</Alert>
-          <Button type="submit" size="lg" className="w-full" loading={busy} disabled={!strong || !matches}>
+          <Button type="submit" size="lg" className="w-full" loading={busy}>
             Send request
           </Button>
           <p className="text-center text-xs leading-relaxed text-ink-400">Nothing is set up until your request is approved. Reviews usually take one working day.</p>

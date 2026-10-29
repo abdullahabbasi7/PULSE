@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider.jsx'
-import { Alert, Badge, Button, Card, CONTROL, EmptyState, Field, Modal, SelectField, Skeleton, useToast } from '../../components/ui/index.js'
+import { Alert, Badge, Button, Card, CONTROL, EmptyState, Field, Modal, SelectField, Skeleton, useFormGuard, useToast } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { api, errorText } from '../../lib/api.js'
 import { formatNumber } from '../../lib/format.js'
@@ -9,6 +9,7 @@ import { CATEGORIES, CATEGORY_LABEL, QrImage } from './shared.jsx'
 const EMPTY = { name: '', category: 'dinner_plate', unit: 'pcs', total_quantity: '', min_quantity: '', condition_note: '' }
 
 function ItemModal({ item, open, onClose, onSaved }) {
+  const guard = useFormGuard()
   const [form, setForm] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -26,6 +27,7 @@ function ItemModal({ item, open, onClose, onSaved }) {
   }
 
   async function save() {
+    if (!guard()) return
     setBusy(true)
     setError('')
     const body = {
@@ -62,11 +64,11 @@ function ItemModal({ item, open, onClose, onSaved }) {
       }
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field id="i_name" label="Name" value={current.name} onChange={set('name')} className="sm:col-span-2" />
+        <Field id="i_name" kind="words" required label="Name" value={current.name} onChange={set('name')} className="sm:col-span-2" />
         <SelectField id="i_cat" label="Category" options={CATEGORIES} value={current.category} onChange={set('category')} />
-        <Field id="i_unit" label="Unit" value={current.unit} onChange={set('unit')} />
-        <Field id="i_total" label="Total owned" type="number" min="0" value={current.total_quantity} onChange={set('total_quantity')} />
-        <Field id="i_min" label="Alert when available falls below" type="number" min="0" value={current.min_quantity} onChange={set('min_quantity')} />
+        <Field id="i_unit" kind="unit" required label="Unit" value={current.unit} onChange={set('unit')} />
+        <Field id="i_total" kind="countZero" required label="Total owned" type="text" inputMode="numeric" value={current.total_quantity} onChange={set('total_quantity')} />
+        <Field id="i_min" kind="countZero" label="Alert when available falls below" type="text" inputMode="numeric" value={current.min_quantity} onChange={set('min_quantity')} />
         <Field id="i_note" label="Condition note" value={current.condition_note} onChange={set('condition_note')} className="sm:col-span-2" />
       </div>
       <div className="mt-4">

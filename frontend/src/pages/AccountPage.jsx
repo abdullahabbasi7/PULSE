@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
-import { Alert, Avatar, Badge, Button, Card, Field, PageHeader, PasswordStrength, useToast } from '../components/ui/index.js'
+import { Alert, Avatar, Badge, Button, Card, Field, PageHeader, PasswordStrength, useFormGuard, useToast } from '../components/ui/index.js'
 import { Icon } from '../layout/icons.jsx'
 import { api, errorText } from '../lib/api.js'
 import { isStrong } from '../lib/passwordRules.js'
@@ -42,6 +42,7 @@ function ProfileCard() {
   const { user, company, reload } = useAuth()
   const toast = useToast()
   const fileRef = useRef(null)
+  const guard = useFormGuard()
   const [form, setForm] = useState({ full_name: user.full_name, phone: user.phone || '', job_title: user.job_title || '' })
   const [photo, setPhoto] = useState(undefined) // undefined: unchanged, '': remove, data URL: new
   const [dragging, setDragging] = useState(false)
@@ -64,6 +65,7 @@ function ProfileCard() {
 
   async function save(event) {
     event.preventDefault()
+    if (!guard(event.currentTarget)) return
     setBusy(true)
     setError('')
     try {
@@ -134,9 +136,9 @@ function ProfileCard() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="p_name" label="Full name" value={form.full_name} onChange={set('full_name')} className="sm:col-span-2" />
-          <Field id="p_title" label="Job title" placeholder="e.g. Operations manager" value={form.job_title} onChange={set('job_title')} />
-          <Field id="p_phone" label="Mobile number" type="tel" placeholder="0300 1234567" value={form.phone} onChange={set('phone')} hint="You can sign in with this number." />
+          <Field id="p_name" kind="personName" required label="Full name" value={form.full_name} onChange={set('full_name')} className="sm:col-span-2" />
+          <Field id="p_title" kind="title" label="Job title" placeholder="e.g. Operations manager" value={form.job_title} onChange={set('job_title')} />
+          <Field id="p_phone" kind="phone" label="Mobile number" type="tel" placeholder="0300 1234567" value={form.phone} onChange={set('phone')} hint="You can sign in with this number." />
         </div>
 
         <dl className="divide-y divide-ink-100 rounded-xl bg-ink-50 px-4 text-sm ring-1 ring-inset ring-ink-200/70">
@@ -163,8 +165,9 @@ function ProfileCard() {
 }
 
 export function AccountPage() {
-  const { user, company, replaceTokens } = useAuth()
+  const { user, replaceTokens } = useAuth()
   const toast = useToast()
+  const guard = useFormGuard()
   const [form, setForm] = useState(EMPTY)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -175,6 +178,7 @@ export function AccountPage() {
   async function submit(event) {
     event.preventDefault()
     setError('')
+    if (!guard(event.currentTarget)) return
     setBusy(true)
     try {
       const tokens = await api('/auth/change-password', {
@@ -199,13 +203,13 @@ export function AccountPage() {
 
         <Card title="Change password" description="Use a password you don't use anywhere else.">
           <form className="space-y-4" onSubmit={submit} noValidate>
-            <Field id="current" label="Current password" type="password" autoComplete="current-password" value={form.current} onChange={update('current')} />
+            <Field id="current" required label="Current password" type="password" autoComplete="current-password" value={form.current} onChange={update('current')} />
             <div>
-              <Field id="next" label="New password" type="password" autoComplete="new-password" value={form.next} onChange={update('next')} />
+              <Field id="next" required label="New password" type="password" autoComplete="new-password" value={form.next} onChange={update('next')} />
               <PasswordStrength password={form.next} email={user.email} fullName={user.full_name} onSuggest={(pw) => setForm((f) => ({ ...f, next: pw, confirm: pw }))} />
             </div>
             <Field
-              id="confirm"
+              id="confirm" required
               label="Confirm new password"
               type="password"
               autoComplete="new-password"

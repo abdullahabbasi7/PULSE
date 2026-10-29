@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
-import { Alert, Button, Field } from '../components/ui/index.js'
+import { Alert, Button, Field, useFormGuard } from '../components/ui/index.js'
 import { ApiError, errorText } from '../lib/api.js'
 import { AuthShell } from './AuthShell.jsx'
 
@@ -12,6 +12,7 @@ export function LoginPage() {
   const [form, setForm] = useState({ identifier: '', password: '' })
   const [error, setError] = useState({ text: '', tone: 'danger' })
   const [busy, setBusy] = useState(false)
+  const guard = useFormGuard()
 
   if (status === 'authenticated') return <Navigate to="/dashboard" replace />
 
@@ -20,10 +21,7 @@ export function LoginPage() {
   async function submit(event) {
     event.preventDefault()
     setError({ text: '', tone: 'danger' })
-    if (!form.identifier.trim() || !form.password) {
-      setError({ text: 'Enter your email or mobile number and your password.', tone: 'danger' })
-      return
-    }
+    if (!guard(event.currentTarget)) return
     setBusy(true)
     try {
       await login(form.identifier.trim(), form.password)
@@ -51,7 +49,7 @@ export function LoginPage() {
     >
       <form className="space-y-5" onSubmit={submit} noValidate>
         <Field
-          id="identifier"
+          id="identifier" kind="identifier"
           label="Email or mobile number"
           autoComplete="username"
           placeholder="you@company.com or 0300 1234567"

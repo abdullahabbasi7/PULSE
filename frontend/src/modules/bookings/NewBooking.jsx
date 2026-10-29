@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider.jsx'
-import { Alert, Badge, Button, Card, CONTROL, EmptyState, Field, PageHeader, SelectField, useToast } from '../../components/ui/index.js'
+import { Alert, Badge, Button, Card, CONTROL, EmptyState, Field, PageHeader, SelectField, useFormGuard, useToast } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { api, errorText } from '../../lib/api.js'
 import { formatDate, percent, timeRange } from '../../lib/format.js'
@@ -187,6 +187,7 @@ export function NewBooking() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const clients = useApi('/bookings/clients')
+  const guard = useFormGuard()
   const canEdit = EDIT_ROLES.includes(user.role)
 
   const set = (key) => (e) => {
@@ -236,6 +237,21 @@ export function NewBooking() {
   async function submit(event) {
     event.preventDefault()
     setError('')
+    if (!guard(event.currentTarget)) return
+    if (form.client_mode === 'new' && form.client_name.trim().length < 2) {
+      toast('Client name: enter the client\'s name.', 'danger')
+      document.getElementById('client_name')?.focus()
+      return
+    }
+    if (form.client_mode === 'existing' && !form.client_id) {
+      toast('Client: choose a client from the list.', 'danger')
+      return
+    }
+    if (form.start_time && form.end_time && form.end_time <= form.start_time) {
+      toast('End time: it must be after the start time.', 'danger')
+      document.getElementById('end_time')?.focus()
+      return
+    }
     setBusy(true)
     try {
       const body = {
@@ -300,8 +316,8 @@ export function NewBooking() {
             </div>
             {form.client_mode === 'new' ? (
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field id="client_name" label="Client name" required value={form.client_name} onChange={set('client_name')} />
-                <Field id="client_phone" label={<Label ai={aiFields.client_phone}>Phone</Label>} type="tel" value={form.client_phone} onChange={set('client_phone')} />
+                <Field id="client_name" kind="companyName" fieldName="Client name" label="Client name" required value={form.client_name} onChange={set('client_name')} />
+                <Field id="client_phone" kind="phone" fieldName="Phone" label={<Label ai={aiFields.client_phone}>Phone</Label>} type="tel" value={form.client_phone} onChange={set('client_phone')} />
               </div>
             ) : (
               <SelectField id="client_id" label="Client" options={clientOptions} value={form.client_id} onChange={set('client_id')} />
@@ -311,11 +327,11 @@ export function NewBooking() {
           <Card title="Event">
             <div className="grid gap-4 sm:grid-cols-2">
               <SelectField id="event_type" label={<Label ai={aiFields.event_type}>Event type</Label>} options={EVENT_TYPES} value={form.event_type} onChange={set('event_type')} />
-              <Field id="event_date" label={<Label ai={aiFields.event_date}>Date</Label>} type="date" required value={form.event_date} onChange={set('event_date')} />
-              <Field id="start_time" label={<Label ai={aiFields.start_time}>Start time</Label>} type="time" value={form.start_time} onChange={set('start_time')} />
-              <Field id="end_time" label="End time" type="time" value={form.end_time} onChange={set('end_time')} />
-              <Field id="venue" label={<Label ai={aiFields.venue}>Venue</Label>} required value={form.venue} onChange={set('venue')} className="sm:col-span-2" />
-              <Field id="guest_count" label={<Label ai={aiFields.guest_count}>Guests</Label>} type="number" min="1" inputMode="numeric" required value={form.guest_count} onChange={set('guest_count')} />
+              <Field id="event_date" kind="futureDate" fieldName="Date" label={<Label ai={aiFields.event_date}>Date</Label>} type="date" required value={form.event_date} onChange={set('event_date')} />
+              <Field id="start_time" kind="time" fieldName="Start time" label={<Label ai={aiFields.start_time}>Start time</Label>} type="time" value={form.start_time} onChange={set('start_time')} />
+              <Field id="end_time" kind="time" label="End time" type="time" value={form.end_time} onChange={set('end_time')} />
+              <Field id="venue" kind="words" fieldName="Venue" label={<Label ai={aiFields.venue}>Venue</Label>} required value={form.venue} onChange={set('venue')} className="sm:col-span-2" />
+              <Field id="guest_count" kind="count" fieldName="Guests" label={<Label ai={aiFields.guest_count}>Guests</Label>} type="text" inputMode="numeric" required value={form.guest_count} onChange={set('guest_count')} />
               <Field id="package" label="Package" placeholder="e.g. Silver" value={form.package} onChange={set('package')} />
             </div>
             {clashes.length > 0 && (
@@ -346,7 +362,7 @@ export function NewBooking() {
                 </label>
                 <textarea id="menu" className={`${CONTROL} min-h-[4.5rem]`} value={form.menu} onChange={set('menu')} placeholder="Dishes, separated by commas" />
               </div>
-              <Field id="quoted_amount" label="Quoted amount" type="number" min="0" inputMode="decimal" value={form.quoted_amount} onChange={set('quoted_amount')} />
+              <Field id="quoted_amount" kind="money" label="Quoted amount" type="text" inputMode="numeric" value={form.quoted_amount} onChange={set('quoted_amount')} />
               <SelectField
                 id="status"
                 label="Status"

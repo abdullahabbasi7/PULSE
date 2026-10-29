@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
-import { Button, Card, Field, PageHeader, SelectField, useToast } from '../components/ui/index.js'
+import { Button, Card, Field, PageHeader, SelectField, useFormGuard, useToast } from '../components/ui/index.js'
 
 const COMMON_ZONES = ['Asia/Karachi', 'Asia/Dubai', 'Asia/Riyadh', 'Asia/Kolkata', 'Asia/Dhaka', 'Asia/Kuala_Lumpur', 'Asia/Singapore', 'Europe/London', 'Europe/Berlin', 'Europe/Istanbul', 'Africa/Cairo', 'Africa/Nairobi', 'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'America/Toronto', 'Australia/Sydney', 'UTC']
 
@@ -41,6 +41,7 @@ function Section({ title, description, children }) {
 export function SettingsPage() {
   const { company, setCompany } = useAuth()
   const toast = useToast()
+  const guard = useFormGuard()
   const [saved, setSaved] = useState(() => fromCompany(company))
   const [form, setForm] = useState(saved)
   const [busy, setBusy] = useState(false)
@@ -50,6 +51,7 @@ export function SettingsPage() {
 
   async function submit(event) {
     event.preventDefault()
+    if (!guard(event.currentTarget)) return
     setBusy(true)
     try {
       const result = await api('/companies/me', {
@@ -80,10 +82,10 @@ export function SettingsPage() {
       <form onSubmit={submit} noValidate>
         <Card bodyClassName="px-5 sm:px-8">
           <Section title="Company profile" description="Shown in the sidebar and on client documents.">
-            <Field id="company_name" label="Company name" required value={form.name} onChange={update('name')} className="sm:col-span-2" />
-            <Field id="company_phone" label="Phone" type="tel" value={form.phone} onChange={update('phone')} />
-            <Field id="company_city" label="City" value={form.city} onChange={update('city')} />
-            <Field id="company_address" label="Address" value={form.address} onChange={update('address')} className="sm:col-span-2" />
+            <Field id="company_name" kind="companyName" label="Company name" required value={form.name} onChange={update('name')} className="sm:col-span-2" />
+            <Field id="company_phone" kind="phone" label="Phone" type="tel" value={form.phone} onChange={update('phone')} />
+            <Field id="company_city" kind="place" label="City" value={form.city} onChange={update('city')} />
+            <Field id="company_address" kind="words" label="Address" value={form.address} onChange={update('address')} className="sm:col-span-2" />
           </Section>
           <div className="border-t border-ink-100" />
           <Section title="Time zone" description="Used for today's live board, attendance times and late marks.">

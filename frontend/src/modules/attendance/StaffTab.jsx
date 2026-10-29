@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Alert, Avatar, Badge, Button, Card, EmptyState, Field, Modal, Skeleton, useToast } from '../../components/ui/index.js'
+import { Alert, Avatar, Badge, Button, Card, EmptyState, Field, Modal, Skeleton, useFormGuard, useToast } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { api, errorText } from '../../lib/api.js'
 import { formatMoney, percent } from '../../lib/format.js'
@@ -9,12 +9,14 @@ import { grab } from './Kiosk.jsx'
 const EMPTY = { full_name: '', designation: 'Waiter', phone: '', daily_wage: '', face_consent: false }
 
 function AddStaffModal({ open, onClose, onAdded }) {
+  const guard = useFormGuard()
   const [form, setForm] = useState(EMPTY)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
 
   async function save() {
+    if (!guard()) return
     setBusy(true)
     setError('')
     try {
@@ -46,10 +48,10 @@ function AddStaffModal({ open, onClose, onAdded }) {
       }
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field id="s_name" label="Full name" value={form.full_name} onChange={set('full_name')} className="sm:col-span-2" />
-        <Field id="s_role" label="Designation" value={form.designation} onChange={set('designation')} />
-        <Field id="s_phone" label="Mobile number" type="tel" value={form.phone} onChange={set('phone')} />
-        <Field id="s_wage" label="Daily wage" type="number" min="0" value={form.daily_wage} onChange={set('daily_wage')} />
+        <Field id="s_name" kind="personName" required label="Full name" value={form.full_name} onChange={set('full_name')} className="sm:col-span-2" />
+        <Field id="s_role" kind="title" required label="Designation" value={form.designation} onChange={set('designation')} />
+        <Field id="s_phone" kind="phone" label="Mobile number" type="tel" value={form.phone} onChange={set('phone')} />
+        <Field id="s_wage" kind="money" label="Daily wage" type="text" inputMode="numeric" value={form.daily_wage} onChange={set('daily_wage')} />
       </div>
       <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-ink-50 p-4">
         <input type="checkbox" className="mt-0.5 h-4 w-4 rounded border-ink-300 text-brand-600 focus:ring-brand-500" checked={form.face_consent} onChange={(e) => setForm({ ...form, face_consent: e.target.checked })} />

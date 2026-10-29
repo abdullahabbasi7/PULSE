@@ -2,7 +2,7 @@
 // It has its own sign-in and token, separate from company accounts.
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
-import { Alert, Badge, Button, Card, EmptyState, Field, Modal, Reveal, Skeleton, Tabs, useToast } from '../components/ui/index.js'
+import { Alert, Badge, Button, Card, EmptyState, Field, Modal, Reveal, Skeleton, Tabs, useFormGuard, useToast } from '../components/ui/index.js'
 import { Icon, PulseLogo } from '../layout/icons.jsx'
 import { formatDateTime } from '../lib/format.js'
 import { EventBackdrop } from '../components/EventBackdrop.jsx'
@@ -56,6 +56,7 @@ const STATUS = {
 
 function PlatformLogin() {
   const navigate = useNavigate()
+  const guard = useFormGuard()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -63,6 +64,7 @@ function PlatformLogin() {
 
   async function submit(event) {
     event.preventDefault()
+    if (!guard(event.currentTarget)) return
     setBusy(true)
     setError('')
     try {
@@ -90,8 +92,8 @@ function PlatformLogin() {
           <h1 className="font-display text-2xl text-ink-900">Platform team sign-in</h1>
           <p className="mt-1 text-sm text-ink-500">For PULSE staff who review company requests. Company users sign in on the main page.</p>
           <form onSubmit={submit} className="mt-5 space-y-4" noValidate>
-            <Field id="p_email" label="Email" type="email" autoComplete="username" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <Field id="p_password" label="Password" type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+            <Field id="p_email" kind="email" required label="Email" type="email" autoComplete="username" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <Field id="p_password" required label="Password" type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             <Alert key={error}>{error}</Alert>
             <Button type="submit" className="w-full" loading={busy} disabled={!form.email || !form.password}>
               Sign in
@@ -104,6 +106,7 @@ function PlatformLogin() {
 }
 
 function ReasonModal({ action, onClose, onConfirm }) {
+  const guard = useFormGuard()
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   useEffect(() => setNote(''), [action])
@@ -128,6 +131,7 @@ function ReasonModal({ action, onClose, onConfirm }) {
             loading={busy}
             disabled={note.trim().length < 3}
             onClick={async () => {
+              if (!guard()) return
               setBusy(true)
               await onConfirm(note.trim())
               setBusy(false)
@@ -138,7 +142,7 @@ function ReasonModal({ action, onClose, onConfirm }) {
         </>
       }
     >
-      <Field id="reason" label="Reason" placeholder={action.status === 'rejected' ? 'e.g. Could not verify the business' : 'e.g. Subscription unpaid'} value={note} onChange={(e) => setNote(e.target.value)} />
+      <Field id="reason" kind="words" required label="Reason" placeholder={action.status === 'rejected' ? 'e.g. Could not verify the business' : 'e.g. Subscription unpaid'} value={note} onChange={(e) => setNote(e.target.value)} />
     </Modal>
   )
 }

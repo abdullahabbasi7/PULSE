@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import jsQR from 'jsqr'
-import { Alert, Badge, Button, Card, Field, SelectField, useToast } from '../../components/ui/index.js'
+import { Alert, Badge, Button, Card, Field, SelectField, useFormGuard, useToast } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { api, errorText } from '../../lib/api.js'
 import { clockTime, formatNumber } from '../../lib/format.js'
@@ -88,6 +88,7 @@ function Scanner({ onCode }) {
 
 export function ScanTab({ items, events, onRecorded, bookingId, setBookingId }) {
   const { company } = useAuth()
+  const guard = useFormGuard()
   const toast = useToast()
   const [direction, setDirection] = useState('out')
   const [item, setItem] = useState(null)
@@ -111,6 +112,7 @@ export function ScanTab({ items, events, onRecorded, bookingId, setBookingId }) 
 
   async function record() {
     setError('')
+    if (!guard(document.getElementById('qty')?.closest('section'))) return
     if (!bookingId) {
       setError('Choose the event first.')
       return
@@ -180,8 +182,8 @@ export function ScanTab({ items, events, onRecorded, bookingId, setBookingId }) 
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field id="qty" label={direction === 'in' ? 'Good pieces back' : direction === 'lost' ? 'Pieces lost' : 'Pieces sent'} type="number" min="0" inputMode="numeric" value={qty} onChange={(e) => setQty(e.target.value)} autoFocus />
-                {direction === 'in' && <Field id="damaged" label="Broken pieces back" type="number" min="0" inputMode="numeric" value={damaged} onChange={(e) => setDamaged(e.target.value)} hint="Broken pieces are written off stock." />}
+                <Field id="qty" kind="countZero" label={direction === 'in' ? 'Good pieces back' : direction === 'lost' ? 'Pieces lost' : 'Pieces sent'} type="text" inputMode="numeric" value={qty} onChange={(e) => setQty(e.target.value)} autoFocus />
+                {direction === 'in' && <Field id="damaged" kind="countZero" label="Broken pieces back" type="text" inputMode="numeric" value={damaged} onChange={(e) => setDamaged(e.target.value)} hint="Broken pieces are written off stock." />}
               </div>
               <div className="flex gap-2">
                 <Button onClick={record} loading={busy} disabled={!qty && !damaged}>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert, Badge, Button, Card, CONTROL, Field, SelectField } from '../../components/ui/index.js'
+import { Alert, Badge, Button, Card, CONTROL, Field, SelectField, useFormGuard } from '../../components/ui/index.js'
 import { Icon } from '../../layout/icons.jsx'
 import { api, errorText } from '../../lib/api.js'
 import { formatNumber, percent } from '../../lib/format.js'
@@ -13,6 +13,7 @@ const STYLES = [
 ]
 
 export function PredictTab({ events, bookingId, setBookingId }) {
+  const guard = useFormGuard()
   const [mode, setMode] = useState(bookingId ? 'event' : 'manual')
   const [form, setForm] = useState({ guest_count: '300', event_type: 'wedding', service_style: 'buffet', menu: 'chicken biryani, mutton qorma, naan, raita, salad, kheer, cold drinks' })
   const [result, setResult] = useState(null)
@@ -22,6 +23,7 @@ export function PredictTab({ events, bookingId, setBookingId }) {
 
   async function run(override) {
     setError('')
+    if ((override ?? mode) === 'manual' && !guard(document.getElementById('p_guests')?.closest('section'))) return
     setBusy(true)
     const useEvent = (override ?? mode) === 'event'
     try {
@@ -71,7 +73,7 @@ export function PredictTab({ events, bookingId, setBookingId }) {
           ) : (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <Field id="p_guests" label="Guests" type="number" min="1" value={form.guest_count} onChange={set('guest_count')} />
+                <Field id="p_guests" kind="count" required label="Guests" type="text" inputMode="numeric" value={form.guest_count} onChange={set('guest_count')} />
                 <SelectField id="p_type" label="Event type" options={EVENT_TYPES} value={form.event_type} onChange={set('event_type')} />
               </div>
               <div>
