@@ -39,6 +39,16 @@ class StaffOut(BaseModel):
     created_at: datetime
 
 
+class StaffDetail(StaffOut):
+    attendance_entries: int = 0
+    last_seen: datetime | None = None
+
+
+class StaffDeleted(BaseModel):
+    full_name: str
+    attendance_entries_deleted: int
+
+
 class EnrollIn(BaseModel):
     images: list[str] = Field(min_length=3, max_length=6, description="Webcam photos as data URLs")
 

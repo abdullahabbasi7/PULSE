@@ -9,7 +9,7 @@ from decimal import Decimal
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_session, require_roles
@@ -37,6 +37,8 @@ from app.modules.attendance.schemas import (
     PoseOut,
     Sheet,
     SheetRow,
+    StaffDeleted,
+    StaffDetail,
     StaffIn,
     StaffOut,
     StaffUpdate,
@@ -49,6 +51,8 @@ VIEW = ("owner", "manager", "accounts", "staff")
 MANAGE = ("owner", "manager")
 KIOSK = ("owner", "manager", "staff")
 REPORTS = ("owner", "manager", "accounts")
+OWNER = ("owner",)
+REQUIRED_FIELDS = ("full_name", "designation", "daily_wage", "face_consent", "is_active")
 
 
 def _staff(session: Session, staff_id: uuid.UUID) -> StaffMember:
@@ -104,6 +108,9 @@ def update_staff(
 ) -> StaffMember:
     member = _staff(session, staff_id)
     changes = body.model_dump(exclude_unset=True)
+    for field in REQUIRED_FIELDS:
+        if field in changes and changes[field] is None:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"{field.replace('_', ' ').capitalize()} cannot be empty.")
     for field, value in changes.items():
         setattr(member, field, value)
     if changes.get("face_consent") is False or changes.get("is_active") is False:
@@ -112,6 +119,32 @@ def update_staff(
         member.face_enrolled_at = None
     session.flush()
     return member
+
+
+@router.get("/staff/{staff_id}", response_model=StaffDetail)
+def get_staff(staff_id: uuid.UUID, session: Session = Depends(get_session), _: User = Depends(require_roles(*VIEW))) -> StaffDetail:
+    """One staff member with how much attendance history they have (shown before deleting)."""
+    member = _staff(session, staff_id)
+    entries, last_seen = session.execute(
+        select(func.count(AttendanceLog.id), func.max(AttendanceLog.logged_at)).where(AttendanceLog.staff_id == member.id)
+    ).one()
+    return StaffDetail(**StaffOut.model_validate(member).model_dump(), attendance_entries=entries, last_seen=last_seen)
+
+
+@router.delete("/staff/{staff_id}", response_model=StaffDeleted)
+def delete_staff(staff_id: uuid.UUID, session: Session = Depends(get_session), _: User = Depends(require_roles(*OWNER))) -> StaffDeleted:
+    """Owner only: remove a staff member for good, with their face data and attendance history.
+
+    To keep past wages and attendance, mark the person inactive instead.
+    """
+    member = _staff(session, staff_id)
+    entries = session.scalar(select(func.count(AttendanceLog.id)).where(AttendanceLog.staff_id == member.id)) or 0
+    name = member.full_name
+    session.execute(delete(FaceEmbedding).where(FaceEmbedding.staff_id == member.id))
+    session.execute(delete(AttendanceLog).where(AttendanceLog.staff_id == member.id))
+    session.delete(member)
+    session.flush()
+    return StaffDeleted(full_name=name, attendance_entries_deleted=entries)
 
 
 @router.delete("/staff/{staff_id}/face", response_model=StaffOut)

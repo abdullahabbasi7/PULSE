@@ -6,7 +6,7 @@ import { Icon } from '../../layout/icons.jsx'
 // and scroll areas can never clip it or show through it). It slides up on phones and
 // rises in on larger screens. Escape or the backdrop closes it; the page behind does
 // not scroll while it is open.
-export function Modal({ open, onClose, title, description, icon, children, footer, size = 'md' }) {
+export function Modal({ open, onClose, title, description, icon, children, footer, size = 'md', tone = 'brand' }) {
   const panelRef = useRef(null)
 
   useEffect(() => {
@@ -36,7 +36,11 @@ export function Modal({ open, onClose, title, description, icon, children, foote
       >
         <header className="flex items-start gap-4 border-b border-ink-100 bg-gradient-to-b from-brand-50/70 to-white px-6 pb-5 pt-6">
           {icon && (
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-[0_6px_14px_-6px_rgba(48,72,201,0.6)]">
+            <span
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                tone === 'danger' ? 'bg-red-50 text-red-600 ring-1 ring-inset ring-red-100' : 'bg-brand-600 text-white shadow-[0_6px_14px_-6px_rgba(48,72,201,0.6)]'
+              }`}
+            >
               <Icon name={icon} className="h-5 w-5" />
             </span>
           )}

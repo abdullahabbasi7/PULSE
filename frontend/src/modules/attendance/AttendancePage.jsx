@@ -36,7 +36,7 @@ export function AttendancePage() {
       <Tabs value={tab} onChange={(id) => setParams({ tab: id }, { replace: true })} tabs={tabs} />
       {tab === 'kiosk' && canKiosk && <Kiosk />}
       {tab === 'today' && <TodayTab today={today} staff={staff.data} canManage={canManage} canExport={canExport} />}
-      {tab === 'staff' && <StaffTab staff={staff.data} setStaff={staff.setData} error={staff.error} canManage={canManage} />}
+      {tab === 'staff' && <StaffTab staff={staff.data} setStaff={staff.setData} error={staff.error} canManage={canManage} canDelete={user.role === 'owner'} />}
     </>
   )
 }

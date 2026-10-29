@@ -6,26 +6,54 @@ import { formatMoney, percent } from '../../lib/format.js'
 import { sleep, useCamera } from '../../lib/useCamera.js'
 import { grab } from './Kiosk.jsx'
 
-const EMPTY = { full_name: '', designation: 'Waiter', phone: '', daily_wage: '', face_consent: false }
+const EMPTY = { full_name: '', designation: 'Waiter', phone: '', daily_wage: '', face_consent: false, is_active: true }
 
-function AddStaffModal({ open, onClose, onAdded }) {
+function toForm(member) {
+  if (!member) return EMPTY
+  return {
+    full_name: member.full_name,
+    designation: member.designation,
+    phone: member.phone || '',
+    daily_wage: Number(member.daily_wage) > 0 ? String(Number(member.daily_wage)) : '',
+    face_consent: member.face_consent,
+    is_active: member.is_active,
+  }
+}
+
+// Add a staff member, or edit one (member given).
+function StaffFormModal({ open, member, onClose, onSaved }) {
   const guard = useFormGuard()
+  const editing = Boolean(member)
   const [form, setForm] = useState(EMPTY)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
 
+  useEffect(() => {
+    if (open) {
+      setForm(toForm(member))
+      setError('')
+    }
+  }, [open, member])
+
+  const losesFace = editing && member.face_enrolled_at && (!form.face_consent || !form.is_active)
+
   async function save() {
     if (!guard()) return
     setBusy(true)
     setError('')
+    const body = {
+      full_name: form.full_name.trim(),
+      designation: form.designation.trim(),
+      phone: form.phone.trim() || null,
+      daily_wage: Number(form.daily_wage || 0),
+      face_consent: form.face_consent,
+    }
     try {
-      const member = await api('/attendance/staff', {
-        method: 'POST',
-        body: { ...form, full_name: form.full_name.trim(), phone: form.phone.trim() || null, daily_wage: Number(form.daily_wage || 0) },
-      })
-      setForm(EMPTY)
-      onAdded(member)
+      const saved = editing
+        ? await api(`/attendance/staff/${member.id}`, { method: 'PATCH', body: { ...body, is_active: form.is_active } })
+        : await api('/attendance/staff', { method: 'POST', body })
+      onSaved(saved, editing)
     } catch (err) {
       setError(errorText(err))
     } finally {
@@ -37,13 +65,13 @@ function AddStaffModal({ open, onClose, onAdded }) {
     <Modal
       open={open}
       onClose={onClose}
-      icon="user"
-      title="Add staff member"
-      description="Waiters, cooks, helpers and drivers who work at events. They do not need a login."
+      icon={editing ? 'edit' : 'user'}
+      title={editing ? 'Edit staff member' : 'Add staff member'}
+      description={editing ? `Update ${member.full_name}'s details. Changes apply straight away.` : 'Waiters, cooks, helpers and drivers who work at events. They do not need a login.'}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={save} loading={busy}>Add staff</Button>
+          <Button onClick={save} loading={busy}>{editing ? 'Save changes' : 'Add staff'}</Button>
         </>
       }
     >
@@ -52,6 +80,28 @@ function AddStaffModal({ open, onClose, onAdded }) {
         <Field id="s_role" kind="title" required label="Designation" value={form.designation} onChange={set('designation')} />
         <Field id="s_phone" kind="phone" label="Mobile number" type="tel" value={form.phone} onChange={set('phone')} />
         <Field id="s_wage" kind="money" label="Daily wage" type="text" inputMode="numeric" value={form.daily_wage} onChange={set('daily_wage')} />
+        {editing && (
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-ink-700">Status</span>
+            <div className="inline-flex w-full rounded-xl bg-ink-100 p-1 text-sm font-semibold" role="radiogroup" aria-label="Status">
+              {[
+                [true, 'Working'],
+                [false, 'Left / inactive'],
+              ].map(([value, label]) => (
+                <button
+                  key={label}
+                  type="button"
+                  role="radio"
+                  aria-checked={form.is_active === value}
+                  onClick={() => setForm({ ...form, is_active: value })}
+                  className={`h-8 flex-1 rounded-lg px-3 transition-colors ${form.is_active === value ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500 hover:text-ink-800'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-ink-50 p-4">
         <input type="checkbox" className="mt-0.5 h-4 w-4 rounded border-ink-300 text-brand-600 focus:ring-brand-500" checked={form.face_consent} onChange={(e) => setForm({ ...form, face_consent: e.target.checked })} />
@@ -59,7 +109,96 @@ function AddStaffModal({ open, onClose, onAdded }) {
           <span className="font-semibold text-ink-900">The staff member agrees to face check-in.</span> A numeric face signature (not a photo) is stored and used only for attendance. They can withdraw at any time and it is deleted.
         </span>
       </label>
+      {losesFace && (
+        <div className="mt-3">
+          <Alert tone="warning">{form.is_active ? 'Without consent' : 'Marking them inactive'}, their registered face will be deleted when you save.</Alert>
+        </div>
+      )}
       <div className="mt-4">
+        <Alert key={error}>{error}</Alert>
+      </div>
+    </Modal>
+  )
+}
+
+// Owner only. Deleting removes attendance history too, so offer "inactive" instead.
+function DeleteStaffModal({ member, onClose, onDeleted, onDeactivated }) {
+  const [info, setInfo] = useState(null)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState('')
+
+  useEffect(() => {
+    if (!member) return
+    setInfo(null)
+    setError('')
+    api(`/attendance/staff/${member.id}`).then(setInfo).catch((err) => setError(errorText(err)))
+  }, [member])
+
+  async function remove() {
+    setBusy('delete')
+    setError('')
+    try {
+      onDeleted(member, await api(`/attendance/staff/${member.id}`, { method: 'DELETE' }))
+    } catch (err) {
+      setError(errorText(err))
+    } finally {
+      setBusy('')
+    }
+  }
+
+  async function deactivate() {
+    setBusy('inactive')
+    setError('')
+    try {
+      onDeactivated(await api(`/attendance/staff/${member.id}`, { method: 'PATCH', body: { is_active: false } }))
+    } catch (err) {
+      setError(errorText(err))
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const entries = info?.attendance_entries ?? 0
+  return (
+    <Modal
+      open={Boolean(member)}
+      onClose={onClose}
+      icon="trash"
+      tone="danger"
+      title="Delete staff member?"
+      description={member ? `${member.full_name} · ${member.designation}` : ''}
+      size="sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} className="mr-auto">Cancel</Button>
+          {member?.is_active && (
+            <Button variant="secondary" onClick={deactivate} loading={busy === 'inactive'} disabled={Boolean(busy)}>
+              Mark inactive
+            </Button>
+          )}
+          <Button variant="danger" onClick={remove} loading={busy === 'delete'} disabled={Boolean(busy) || !info}>
+            <Icon name="trash" className="h-4 w-4" />
+            Delete
+          </Button>
+        </>
+      }
+    >
+      {!info && !error && <Skeleton className="h-16 w-full" />}
+      {info && (
+        <div className="space-y-3 text-sm text-ink-700">
+          <p>This permanently removes the record. It cannot be undone.</p>
+          <ul className="space-y-1.5 rounded-xl bg-red-50/70 p-3.5 text-red-800 ring-1 ring-inset ring-red-100">
+            <li className="flex gap-2"><Icon name="close" className="mt-0.5 h-4 w-4 shrink-0" />Their details and daily wage</li>
+            {info.face_enrolled_at && <li className="flex gap-2"><Icon name="close" className="mt-0.5 h-4 w-4 shrink-0" />Their registered face</li>}
+            <li className="flex gap-2">
+              <Icon name="close" className="mt-0.5 h-4 w-4 shrink-0" />
+              {entries ? `${entries} attendance ${entries === 1 ? 'entry' : 'entries'}, so past wage reports will no longer include them` : 'No attendance history yet'}
+            </li>
+          </ul>
+          {entries > 0 && member?.is_active && <p className="text-ink-500">If they have just left, <span className="font-medium text-ink-800">Mark inactive</span> keeps their history for wage reports.</p>}
+        </div>
+      )}
+      <div className="mt-3">
         <Alert key={error}>{error}</Alert>
       </div>
     </Modal>
@@ -317,9 +456,11 @@ function EnrollModal({ member, onClose, onDone }) {
   )
 }
 
-export function StaffTab({ staff, setStaff, error, canManage }) {
+export function StaffTab({ staff, setStaff, error, canManage, canDelete }) {
   const toast = useToast()
   const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const [deleting, setDeleting] = useState(null)
   const [enrolling, setEnrolling] = useState(null)
   const [busy, setBusy] = useState(null)
   const replace = (m) => setStaff((list) => list.map((s) => (s.id === m.id ? m : s)))
@@ -360,7 +501,10 @@ export function StaffTab({ staff, setStaff, error, canManage }) {
               <li key={s.id} className={`flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3.5 sm:px-6 ${s.is_active ? '' : 'opacity-60'}`}>
                 <Avatar name={s.full_name} />
                 <div className="min-w-0 flex-1 basis-44">
-                  <p className="truncate text-sm font-semibold text-ink-900">{s.full_name}</p>
+                  <p className="flex items-center gap-2 truncate text-sm font-semibold text-ink-900">
+                    <span className="truncate">{s.full_name}</span>
+                    {!s.is_active && <Badge tone="neutral">Inactive</Badge>}
+                  </p>
                   <p className="truncate text-sm text-ink-500">
                     {s.designation}
                     {s.phone && ` · ${s.phone}`}
@@ -397,20 +541,70 @@ export function StaffTab({ staff, setStaff, error, canManage }) {
                       {s.face_consent ? 'Withdraw consent' : 'Record consent'}
                     </Button>
                   )}
+                {(canManage || canDelete) && (
+                  <span className="flex items-center gap-1 border-l border-ink-100 pl-2">
+                    {canManage && (
+                      <button
+                        type="button"
+                        onClick={() => setEditing(s)}
+                        title="Edit"
+                        aria-label={`Edit ${s.full_name}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-900"
+                      >
+                        <Icon name="edit" className="h-4 w-4" />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={() => setDeleting(s)}
+                        title="Delete"
+                        aria-label={`Delete ${s.full_name}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Icon name="trash" className="h-4 w-4" />
+                      </button>
+                    )}
+                  </span>
+                )}
                 </div>
               </li>
             ))}
           </ul>
         )}
       </Card>
-      <AddStaffModal
-        open={adding}
-        onClose={() => setAdding(false)}
-        onAdded={(m) => {
-          setStaff((list) => [...(list || []), m])
+      <StaffFormModal
+        open={adding || Boolean(editing)}
+        member={editing}
+        onClose={() => {
           setAdding(false)
-          toast(`${m.full_name} added`)
-          if (m.face_consent) setEnrolling(m)
+          setEditing(null)
+        }}
+        onSaved={(m, wasEdit) => {
+          if (wasEdit) {
+            replace(m)
+            setEditing(null)
+            toast(`${m.full_name}'s record updated`)
+          } else {
+            setStaff((list) => [...(list || []), m])
+            setAdding(false)
+            toast(`${m.full_name} added`)
+            if (m.face_consent) setEnrolling(m)
+          }
+        }}
+      />
+      <DeleteStaffModal
+        member={deleting}
+        onClose={() => setDeleting(null)}
+        onDeleted={(m, res) => {
+          setStaff((list) => list.filter((x) => x.id !== m.id))
+          setDeleting(null)
+          toast(`${res.full_name} deleted${res.attendance_entries_deleted ? ` with ${res.attendance_entries_deleted} attendance entries` : ''}`)
+        }}
+        onDeactivated={(m) => {
+          replace(m)
+          setDeleting(null)
+          toast(`${m.full_name} marked inactive. Their history is kept.`)
         }}
       />
       <EnrollModal
