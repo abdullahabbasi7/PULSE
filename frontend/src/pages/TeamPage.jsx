@@ -108,13 +108,14 @@ function MemberRow({ member, isSelf, canEdit, canReset, onChanged, onReset }) {
   const editable = canEdit && !isSelf
   return (
     <li className={`flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4 transition-colors hover:bg-ink-50/70 sm:px-6 ${member.is_active ? '' : 'opacity-60'}`}>
-      <Avatar name={member.full_name} />
+      <Avatar name={member.full_name} src={member.avatar} />
       <div className="min-w-0 flex-1 basis-48">
         <p className="truncate text-sm font-semibold text-ink-900">
           {member.full_name}
           {isSelf && <span className="ml-2 text-xs font-normal text-ink-400">You</span>}
         </p>
         <p className="truncate text-sm text-ink-500">
+          {member.job_title && <span className="text-ink-700">{member.job_title} · </span>}
           {member.email}
           {member.phone && <span className="tabular text-ink-400"> · {member.phone}</span>}
         </p>

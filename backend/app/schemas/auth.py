@@ -47,6 +47,15 @@ class MeOut(BaseModel):
     company: CompanyOut
 
 
+class ProfileUpdate(BaseModel):
+    """What a person can change about themselves. Email and role stay with the owner."""
+
+    full_name: str | None = Field(default=None, min_length=2, max_length=120)
+    phone: OptionalPhone = None
+    job_title: str | None = Field(default=None, max_length=80)
+    avatar: str | None = Field(default=None, max_length=9_000_000, description="Image data URL; empty string removes the photo")
+
+
 class ChangePasswordIn(BaseModel):
     current_password: str = Field(min_length=1, max_length=128)
     new_password: str = Field(min_length=1, max_length=128)

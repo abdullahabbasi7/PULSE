@@ -128,10 +128,10 @@ function UserMenu({ user, onSignOut }) {
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <Avatar name={user.full_name} size="sm" />
+        <Avatar name={user.full_name} src={user.avatar} size="sm" />
         <span className="hidden text-left sm:block">
           <span className="block text-sm font-semibold leading-tight text-ink-900">{user.full_name}</span>
-          <span className="block text-xs leading-tight text-ink-500">{ROLE_LABELS[user.role]}</span>
+          <span className="block text-xs leading-tight text-ink-500">{user.job_title || ROLE_LABELS[user.role]}</span>
         </span>
         <Icon name="chevronDown" className={`hidden h-4 w-4 text-ink-400 transition-transform duration-200 sm:block ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -141,7 +141,7 @@ function UserMenu({ user, onSignOut }) {
           className="absolute right-0 top-full z-40 mt-2 w-64 origin-top-right animate-pop-in rounded-2xl bg-white p-2 shadow-pop ring-1 ring-ink-200/70"
         >
           <div className="flex items-center gap-3 px-2.5 py-2">
-            <Avatar name={user.full_name} />
+            <Avatar name={user.full_name} src={user.avatar} />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-ink-900">{user.full_name}</p>
               <p className="truncate text-xs text-ink-500">{user.email}</p>
@@ -235,7 +235,7 @@ export function AppLayout() {
           <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
             <span className="hidden truncate text-ink-500 sm:inline lg:hidden">{company.name}</span>
             <Icon name="chevronRight" className="hidden h-4 w-4 shrink-0 text-ink-300 sm:block lg:hidden" />
-            <span className="truncate font-semibold text-ink-900">{current?.label ?? 'PULSE'}</span>
+            <span className="truncate font-semibold text-ink-900">{current?.label ?? (location.pathname.startsWith('/account') ? 'Your account' : 'PULSE')}</span>
           </div>
           <UserMenu user={user} onSignOut={logout} />
         </header>

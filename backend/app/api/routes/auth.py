@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import company_block_message, get_current_user, get_public_session, get_session
 from app.core.config import settings
 from app.core.passwords import password_problems
+from app.core.images import ImageError, avatar_from_data_url
 from app.core.phone import looks_like_email, normalize_phone
 from app.core.security import (
     DUMMY_PASSWORD_HASH,
@@ -27,6 +28,7 @@ from app.schemas.auth import (
     MeOut,
     PasswordCheckIn,
     PasswordCheckOut,
+    ProfileUpdate,
     RefreshIn,
     SignupIn,
     SignupOut,
@@ -174,6 +176,32 @@ def refresh(body: RefreshIn, session: Session = Depends(get_public_session)) -> 
 
 @router.get("/me", response_model=MeOut)
 def me(user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> MeOut:
+    company = session.get(Company, user.company_id)
+    return MeOut(user=UserOut.model_validate(user), company=CompanyOut.model_validate(company))
+
+
+@router.patch("/me", response_model=MeOut)
+def update_me(body: ProfileUpdate, user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> MeOut:
+    """Update your own name, mobile number, job title and profile photo."""
+    changes = body.model_dump(exclude_unset=True)
+    if "full_name" in changes and changes["full_name"]:
+        user.full_name = changes["full_name"].strip()
+    if "phone" in changes:
+        user.phone = changes["phone"]
+    if "job_title" in changes:
+        user.job_title = (changes["job_title"] or "").strip() or None
+    if "avatar" in changes:
+        if changes["avatar"]:
+            try:
+                user.avatar = avatar_from_data_url(changes["avatar"])
+            except ImageError as error:
+                raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(error)) from None
+        else:
+            user.avatar = None
+    try:
+        session.flush()
+    except IntegrityError:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Another account already uses this mobile number.") from None
     company = session.get(Company, user.company_id)
     return MeOut(user=UserOut.model_validate(user), company=CompanyOut.model_validate(company))
 

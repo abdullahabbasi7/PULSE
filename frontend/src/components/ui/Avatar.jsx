@@ -8,14 +8,25 @@ const GLAZES = [
   'bg-kashi-600 text-white',
 ]
 
-const SIZES = { sm: 'h-8 w-8 text-xs', md: 'h-10 w-10 text-sm', lg: 'h-12 w-12 text-base' }
+const SIZES = { sm: 'h-8 w-8 text-xs', md: 'h-10 w-10 text-sm', lg: 'h-12 w-12 text-base', xl: 'h-24 w-24 text-2xl' }
 
 export function initials(name = '') {
   const parts = name.trim().split(/\s+/).filter(Boolean)
   return ((parts[0]?.[0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || '?'
 }
 
-export function Avatar({ name, size = 'md', className = '' }) {
+// Shows the person's photo when they have one, otherwise their initials.
+export function Avatar({ name, src, size = 'md', className = '' }) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        className={`inline-block shrink-0 select-none rounded-full object-cover ring-2 ring-white ${SIZES[size]} ${className}`}
+        aria-hidden="true"
+      />
+    )
+  }
   let hash = 0
   for (const char of name || '') hash = (hash * 31 + char.charCodeAt(0)) >>> 0
   return (

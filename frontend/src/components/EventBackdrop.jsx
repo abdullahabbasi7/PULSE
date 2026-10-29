@@ -72,32 +72,31 @@ const ART = {
 
 // Each motif: where it sits, how big, its colour, how fast it drifts with scrolling.
 const MOTIFS = [
-  { art: 'chandelier', left: '58%', top: '7%', w: 150, tone: 'text-brand-300', depth: 0.06, float: 9, rot: -2 },
+  { art: 'chandelier', left: '62%', top: '44%', w: 130, tone: 'text-brand-200', depth: 0.06, float: 9, rot: -2 },
   { art: 'cloche', left: '86%', top: '28%', w: 120, tone: 'text-kashi-300', depth: 0.12, float: 11, rot: 4 },
   { art: 'glasses', left: '35%', top: '48%', w: 96, tone: 'text-saffron-300', depth: 0.18, float: 8, rot: -6 },
   { art: 'plate', left: '74%', top: '68%', w: 112, tone: 'text-brand-200', depth: 0.1, float: 12, rot: 6 },
   { art: 'cake', left: '48%', top: '84%', w: 104, tone: 'text-kashi-300', depth: 0.22, float: 10, rot: -3 },
   { art: 'lantern', left: '93%', top: '58%', w: 64, tone: 'text-saffron-300', depth: 0.28, float: 7, rot: 5 },
-  { art: 'tent', left: '26%', top: '18%', w: 128, tone: 'text-brand-200', depth: 0.14, float: 13, rot: 2 },
+  { art: 'tent', left: '24%', top: '62%', w: 128, tone: 'text-brand-200', depth: 0.14, float: 13, rot: 2 },
 ]
 
 function Festoon({ top = 0 }) {
   // A sagging wire with bulbs that twinkle one after another.
-  const bulbs = Array.from({ length: 22 }, (_, i) => {
-    const t = i / 21
+  const bulbs = Array.from({ length: 31 }, (_, i) => {
+    const t = i / 30
     const x = t * 1200
-    const y = 18 + Math.sin(t * Math.PI * 3) ** 2 * 34
+    const y = 10 + Math.sin(t * Math.PI * 4) ** 2 * 16
     return { x, y, delay: (i % 7) * 0.45 }
   })
   const d = bulbs.map((b, i) => `${i ? 'L' : 'M'}${b.x.toFixed(0)} ${(b.y - 6).toFixed(1)}`).join(' ')
   return (
-    <svg viewBox="0 0 1200 80" preserveAspectRatio="none" className="absolute inset-x-0 h-20 w-full" style={{ top }} aria-hidden="true">
-      <path d={d} fill="none" stroke="currentColor" className="text-ink-300/70" strokeWidth="1.2" />
+    <svg viewBox="0 0 1200 40" preserveAspectRatio="none" className="absolute inset-x-0 h-10 w-full opacity-80" style={{ top }} aria-hidden="true">
+      <path d={d} fill="none" className="stroke-ink-200" strokeWidth="0.8" vectorEffect="non-scaling-stroke" />
       {bulbs.map((b, i) => (
         <g key={i}>
-          <line x1={b.x} y1={b.y - 6} x2={b.x} y2={b.y} className="stroke-ink-300/70" strokeWidth="1.2" />
-          <circle cx={b.x} cy={b.y + 4} r="9" className="twinkle fill-saffron-200/70" style={{ animationDelay: `${b.delay}s` }} />
-          <circle cx={b.x} cy={b.y + 4} r="3.6" className={`twinkle-core ${i % 3 === 0 ? 'fill-kashi-300' : i % 3 === 1 ? 'fill-saffron-300' : 'fill-brand-300'}`} style={{ animationDelay: `${b.delay}s` }} />
+          <circle cx={b.x} cy={b.y - 1} r="4.5" className="twinkle fill-saffron-100" style={{ animationDelay: `${b.delay}s` }} />
+          <circle cx={b.x} cy={b.y - 1} r="1.8" className={`twinkle-core ${i % 3 === 0 ? 'fill-kashi-300' : i % 3 === 1 ? 'fill-saffron-300' : 'fill-brand-300'}`} style={{ animationDelay: `${b.delay}s` }} />
         </g>
       ))}
     </svg>
@@ -106,7 +105,7 @@ function Festoon({ top = 0 }) {
 
 // A lighter set for the right half of the sign-in screens.
 export const SIDE_MOTIFS = [
-  { art: 'chandelier', left: '80%', top: '6%', w: 120, tone: 'text-brand-200', depth: 0.05, float: 9, rot: -2 },
+  { art: 'plate', left: '84%', top: '18%', w: 96, tone: 'text-brand-200', depth: 0.05, float: 9, rot: -2 },
   { art: 'glasses', left: '94%', top: '46%', w: 80, tone: 'text-saffron-300', depth: 0.1, float: 8, rot: -6 },
   { art: 'cake', left: '66%', top: '84%', w: 90, tone: 'text-kashi-300', depth: 0.12, float: 10, rot: 3 },
   { art: 'lantern', left: '60%', top: '30%', w: 52, tone: 'text-saffron-300', depth: 0.16, float: 7, rot: 5 },
@@ -135,7 +134,7 @@ export function EventBackdrop({ className = '', motifs = MOTIFS, lights = true, 
     <>
     {/* The lights hang at the top of the page and scroll away with it. */}
     {lights && (
-      <div className={`pointer-events-none absolute inset-x-0 top-0 h-40 overflow-hidden ${className}`} aria-hidden="true">
+      <div className={`pointer-events-none absolute inset-x-0 top-0 h-24 overflow-hidden ${className}`} aria-hidden="true">
         <Festoon top={lightsTop} />
       </div>
     )}

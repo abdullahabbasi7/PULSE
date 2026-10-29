@@ -17,6 +17,8 @@ class UserOut(BaseModel):
     full_name: str
     email: str
     phone: str | None = None
+    job_title: str | None = None
+    avatar: str | None = None
     role: Role
     is_active: bool
     created_at: datetime
