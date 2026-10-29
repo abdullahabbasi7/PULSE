@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { KashiTiles } from '../components/KashiTiles.jsx'
-import { Badge, Card, CountUp, Reveal, Skeleton, Tilt } from '../components/ui/index.js'
+import { Aurora, Badge, Card, CountUp, Reveal, Skeleton, Tilt } from '../components/ui/index.js'
+import { ModuleDeck } from '../components/ModuleDeck.jsx'
 import { Icon } from '../layout/icons.jsx'
 import { rolesFor } from '../layout/nav.js'
 import { api } from '../lib/api.js'
@@ -15,7 +16,7 @@ function greeting(date) {
   return 'Good evening'
 }
 
-function WelcomeBanner({ firstName, company }) {
+function WelcomeBanner({ firstName, company, allowed }) {
   const now = new Date()
   const today = now.toLocaleDateString('en-GB', { timeZone: company.timezone, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   return (
@@ -28,14 +29,20 @@ function WelcomeBanner({ firstName, company }) {
         accentClass="stroke-kashi-400"
         diamondClass="stroke-brand-200"
       />
-      <div className="relative max-w-xl">
-        <p className="text-sm font-medium text-brand-700">{today}</p>
-        <h1 className="mt-2 font-display text-[2.1rem] leading-tight sm:text-[2.6rem]">
-          {greeting(now)}, {firstName}
-        </h1>
-        <p className="mt-3 text-[0.95rem] leading-relaxed text-ink-600">
-          Bookings, stock and staff for every {company.name} event come together here.
-        </p>
+      <Aurora />
+      <div className="relative flex items-center justify-between gap-8">
+        <div className="max-w-xl">
+          <p className="animate-page-in text-sm font-medium text-brand-700">{today}</p>
+          <h1 className="mt-2 animate-page-in font-display text-[2.1rem] leading-tight [animation-delay:120ms] sm:text-[2.6rem]">
+            {greeting(now)}, {firstName}
+          </h1>
+          <p className="mt-3 animate-page-in text-[0.95rem] leading-relaxed text-ink-600 [animation-delay:240ms]">
+            Bookings, stock and staff for every {company.name} event come together here.
+          </p>
+        </div>
+        <div className="mr-10 hidden shrink-0 animate-card-in [animation-delay:350ms] lg:block">
+          <ModuleDeck allowed={allowed} />
+        </div>
       </div>
     </section>
   )
@@ -229,7 +236,7 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <WelcomeBanner firstName={firstName} company={company} />
+      <WelcomeBanner firstName={firstName} company={company} allowed={modules.map((m) => m.path)} />
       <TodayStrip role={user.role} />
 
       <section aria-labelledby="modules-heading">

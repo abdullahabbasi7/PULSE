@@ -45,19 +45,28 @@
   }
 }
 
-/* Everyone who asks their system for less motion gets none. */
+/* People who ask their system for less motion keep the gentle fades, but nothing
+   floats, tilts, drifts or scrolls by on its own. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 1ms !important;
-    animation-delay: 0ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
+  .animate-float,
+  .animate-scan,
+  .animate-steam,
+  .animate-ring-pulse,
+  .deck-card,
+  .aurora > span,
+  .marquee-track {
+    animation: none !important;
+  }
+  .tilt,
+  .tilt-active {
+    transform: none !important;
+  }
+  * {
     scroll-behavior: auto !important;
   }
   .tile-draw {
     stroke-dashoffset: 0;
+    animation: none !important;
   }
 }
 
@@ -135,4 +144,57 @@
 }
 .sheen:hover::after {
   animation: sheen 900ms ease-out;
+}
+
+/* Drifting colour light behind hero areas (components/ui/Motion.jsx: Aurora). */
+@keyframes aurora-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(14%, -10%) scale(1.2); }
+}
+@keyframes aurora-b {
+  0%, 100% { transform: translate(0, 0) scale(1.1); }
+  50% { transform: translate(-16%, 12%) scale(0.9); }
+}
+@keyframes aurora-c {
+  0%, 100% { transform: translate(0, 0) scale(0.95); }
+  50% { transform: translate(10%, 16%) scale(1.15); }
+}
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aurora > span {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(56px);
+  opacity: 0.65;
+}
+
+/* A fanned deck of module cards that sways on its own and spreads on hover. */
+@keyframes deck-sway {
+  0%, 100% { transform: translate(var(--x), 0) rotate(var(--r)); }
+  50% { transform: translate(var(--x), -12px) rotate(calc(var(--r) + 2deg)); }
+}
+.deck-card {
+  transform: translate(var(--x), 0) rotate(var(--r));
+  animation: deck-sway 5.5s ease-in-out infinite;
+  transition: transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 300ms ease;
+}
+.deck:hover .deck-card {
+  animation: none;
+  transform: translate(var(--xh), -10px) rotate(var(--rh));
+}
+
+/* An endless strip of features. */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 28s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
 }

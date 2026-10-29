@@ -76,8 +76,8 @@ export default {
       },
       keyframes: {
         'page-in': {
-          from: { opacity: '0', transform: 'translateY(6px)' },
-          to: { opacity: '1', transform: 'none' },
+          from: { opacity: '0', transform: 'translateY(16px)', filter: 'blur(3px)' },
+          to: { opacity: '1', transform: 'none', filter: 'blur(0)' },
         },
         'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
         'drawer-in': { from: { transform: 'translateX(-100%)' }, to: { transform: 'none' } },
@@ -112,7 +112,7 @@ export default {
         },
       },
       animation: {
-        'page-in': 'page-in 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both',
+        'page-in': 'page-in 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both',
         'fade-in': 'fade-in 200ms ease-out both',
         'drawer-in': 'drawer-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
         'pop-in': 'pop-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both',

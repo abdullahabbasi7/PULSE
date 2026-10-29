@@ -1,6 +1,7 @@
 import { KashiTiles } from '../components/KashiTiles.jsx'
 import { PulseMark } from '../layout/icons.jsx'
 import { AuthShowcase } from '../components/AuthShowcase.jsx'
+import { Aurora, Marquee } from '../components/ui/index.js'
 
 // What the whole platform does, grouped from the 12 modules in the proposal.
 const HIGHLIGHTS = [
@@ -53,8 +54,7 @@ export function AuthShell({ title, subtitle, children, footer }) {
         />
         {/* Clear porcelain behind the text so it stays easy to read. */}
         <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(246,247,251,0.97)_30%,rgba(246,247,251,0.6)_65%,rgba(246,247,251,0.15)_100%)]" />
-        <div className="absolute -right-24 top-1/3 h-72 w-72 rounded-full bg-kashi-200/40 blur-3xl" aria-hidden="true" />
-        <div className="absolute -left-20 bottom-10 h-64 w-64 rounded-full bg-brand-200/40 blur-3xl" aria-hidden="true" />
+        <Aurora />
 
         <div className="relative flex h-full flex-col gap-6 px-12 py-10 xl:px-16 [@media(max-height:820px)]:gap-4 [@media(max-height:820px)]:py-7">
           <div className="flex items-center gap-2.5 text-brand-600">
@@ -79,19 +79,21 @@ export function AuthShell({ title, subtitle, children, footer }) {
           </div>
 
           <div className="space-y-4">
-            <ul className="flex flex-wrap gap-2">
-              {HIGHLIGHTS.map((item, i) => (
-                <li
-                  key={item.title}
-                  title={item.text}
-                  className="inline-flex animate-chip-in items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-semibold text-ink-700 shadow-sm ring-1 ring-ink-200/70"
-                  style={{ animationDelay: `${1700 + i * 120}ms` }}
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-kashi-500" />
-                  {item.short}
-                </li>
-              ))}
-            </ul>
+            <Marquee
+              className="animate-chip-in [animation-delay:1600ms]"
+              items={[
+                'AI inquiry reader',
+                'Live event board',
+                'QR crockery tracking',
+                'Equipment predictor',
+                'Face check-in',
+                'Liveness check',
+                'Kitchen forecasting',
+                'Fleet tracking',
+                'Generative decor',
+                'Owner dashboard',
+              ]}
+            />
             <p className="text-sm text-ink-500">Final Year Project, BS Artificial Intelligence, SZABIST Islamabad</p>
           </div>
         </div>
