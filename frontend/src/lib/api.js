@@ -31,7 +31,7 @@ export class ApiError extends Error {
   }
 }
 
-function messageFrom(data) {
+function messageFrom(data, status) {
   const detail = data?.detail
   if (typeof detail === 'string') return detail
   if (Array.isArray(detail) && detail.length > 0) {
@@ -42,6 +42,11 @@ function messageFrom(data) {
         return field && field !== 'body' ? `${field}: ${text}` : text
       })
       .join(' ')
+  }
+  if (status >= 500) {
+    return status === 500 && data
+      ? 'The PULSE server hit an error. Please try again; if it keeps happening, check the backend logs.'
+      : 'The PULSE server is not responding. It may still be starting; wait a minute and try again.'
   }
   return 'Something went wrong. Please try again.'
 }
@@ -102,7 +107,7 @@ export async function api(path, { method = 'GET', body, auth = true, retry = tru
   }
 
   const data = response.status === 204 ? null : await response.json().catch(() => null)
-  if (!response.ok) throw new ApiError(response.status, messageFrom(data), data)
+  if (!response.ok) throw new ApiError(response.status, messageFrom(data, response.status), data)
   return data
 }
 
@@ -114,7 +119,7 @@ export async function apiDownload(path, filename) {
   })
   if (!response.ok) {
     const data = await response.json().catch(() => null)
-    throw new ApiError(response.status, messageFrom(data), data)
+    throw new ApiError(response.status, messageFrom(data, response.status), data)
   }
   const url = URL.createObjectURL(await response.blob())
   const link = document.createElement('a')

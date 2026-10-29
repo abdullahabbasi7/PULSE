@@ -74,7 +74,7 @@ export function AuthShell({ title, subtitle, children, footer }) {
             <p className="mt-3 text-lg font-medium text-brand-800">An AI-Driven Management Platform for Catering Enterprises</p>
           </div>
 
-          <div className="flex min-h-0 flex-1 items-center">
+          <div className="flex min-h-0 flex-1 items-center justify-center">
             <AuthShowcase />
           </div>
 

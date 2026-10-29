@@ -108,7 +108,7 @@ const CHIPS = [
 
 export function AuthShowcase() {
   return (
-    <div className="relative mx-auto h-[19.5rem] w-full max-w-[34rem] [@media(max-height:680px)]:hidden">
+    <div className="relative mx-auto h-[19.5rem] w-full max-w-[34rem] origin-center [@media(max-height:780px)]:scale-[0.85] [@media(max-height:700px)]:scale-[0.72] [@media(max-height:620px)]:scale-[0.6] [@media(max-height:520px)]:hidden">
       {/* M1: inquiry reader */}
       <Card className="left-0 top-0 w-[19.5rem]" delay={700} floatDelay={0}>
         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-700">
