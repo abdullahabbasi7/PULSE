@@ -2,7 +2,8 @@
 // It has its own sign-in and token, separate from company accounts.
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
-import { Alert, Badge, Button, Card, EmptyState, Field, Modal, Reveal, Skeleton, Tabs, useFormGuard, useToast } from '../components/ui/index.js'
+import { Alert, Badge, Button, Card, EmptyState, Field, Modal, PasswordStrength, Reveal, SelectField, Skeleton, Tabs, useFormGuard, useToast } from '../components/ui/index.js'
+import { isStrong } from '../lib/passwordRules.js'
 import { Icon, PulseLogo } from '../layout/icons.jsx'
 import { formatDateTime } from '../lib/format.js'
 import { EventBackdrop } from '../components/EventBackdrop.jsx'
@@ -202,6 +203,133 @@ function CompanyCard({ c, busy, onDecide, onAsk }) {
   )
 }
 
+const ZONES = ['Asia/Karachi', 'Asia/Dubai', 'Asia/Riyadh', 'Asia/Kolkata', 'Asia/Dhaka', 'Asia/Kuala_Lumpur', 'Asia/Singapore', 'Europe/London', 'Europe/Berlin', 'Europe/Istanbul', 'Africa/Cairo', 'Africa/Nairobi', 'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'America/Toronto', 'Australia/Sydney', 'UTC']
+const NEW_COMPANY = { company_name: '', city: '', timezone: 'Asia/Karachi', phone: '', owner_name: '', owner_email: '', owner_mobile: '', owner_password: '' }
+
+// The PULSE team adds a company itself (e.g. after a phone call). It is active at once.
+function AddCompanyModal({ open, onClose, onAdded }) {
+  const guard = useFormGuard()
+  const [form, setForm] = useState(NEW_COMPANY)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
+
+  useEffect(() => {
+    if (open) {
+      setForm(NEW_COMPANY)
+      setError('')
+    }
+  }, [open])
+
+  async function save() {
+    if (!guard()) return
+    if (!isStrong(form.owner_password, { email: form.owner_email, fullName: form.owner_name })) {
+      setError('Choose a stronger password, or press "Suggest a strong password".')
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      const body = { ...form, city: form.city.trim() || null, phone: form.phone.trim() || null, company_name: form.company_name.trim(), owner_name: form.owner_name.trim(), owner_email: form.owner_email.trim() }
+      const company = await call('/companies', { method: 'POST', body })
+      onAdded(company, { email: body.owner_email, mobile: form.owner_mobile.trim(), password: form.owner_password })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      icon="building"
+      title="Add a company"
+      description="The company is approved straight away. Its owner signs in with the email or mobile number and the password you set here."
+      size="lg"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={save} loading={busy}>
+            <Icon name="plus" className="h-4 w-4" />
+            Add company
+          </Button>
+        </>
+      }
+    >
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-400">Company</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field id="ac_name" kind="companyName" required label="Company name" placeholder="e.g. Royal Caterers" value={form.company_name} onChange={set('company_name')} className="sm:col-span-2" />
+        <Field id="ac_city" kind="place" label="City" placeholder="e.g. Lahore" value={form.city} onChange={set('city')} />
+        <SelectField id="ac_tz" label="Time zone" options={ZONES.map((z) => ({ value: z, label: z.replace(/_/g, ' ') }))} value={form.timezone} onChange={set('timezone')} />
+        <Field id="ac_phone" kind="phone" label="Company phone (optional)" type="tel" value={form.phone} onChange={set('phone')} />
+      </div>
+      <p className="mb-3 mt-6 text-xs font-semibold uppercase tracking-wide text-ink-400">Owner's sign-in</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field id="ac_owner" kind="personName" required label="Owner's full name" value={form.owner_name} onChange={set('owner_name')} className="sm:col-span-2" />
+        <Field id="ac_email" kind="email" required label="Owner's email" type="email" value={form.owner_email} onChange={set('owner_email')} />
+        <Field id="ac_mobile" kind="phone" required label="Owner's mobile number" type="tel" placeholder="0300 1234567" value={form.owner_mobile} onChange={set('owner_mobile')} />
+        <div className="sm:col-span-2">
+          <Field id="ac_password" required label="Password for the owner" type="text" autoComplete="new-password" value={form.owner_password} onChange={set('owner_password')} />
+          <PasswordStrength password={form.owner_password} email={form.owner_email} fullName={form.owner_name} onSuggest={(pw) => setForm((f) => ({ ...f, owner_password: pw }))} />
+        </div>
+      </div>
+      <div className="mt-4">
+        <Alert key={error}>{error}</Alert>
+      </div>
+    </Modal>
+  )
+}
+
+// Shown once after adding a company, so the admin can pass the sign-in details on.
+function SignInDetailsModal({ details, onClose }) {
+  const toast = useToast()
+  if (!details) return null
+  const text = `PULSE workspace for ${details.company}\nSign in at: ${window.location.origin}/login\nEmail: ${details.email}\nMobile: ${details.mobile}\nPassword: ${details.password}\nPlease change this password after your first sign-in (Account page).`
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast('Sign-in details copied')
+    } catch {
+      toast('Could not copy. Select the text and copy it yourself.', 'danger')
+    }
+  }
+  return (
+    <Modal
+      open={Boolean(details)}
+      onClose={onClose}
+      icon="check"
+      title={`${details.company} is ready`}
+      description="Send these details to the owner. The password is shown only now."
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Done</Button>
+          <Button onClick={copy}>
+            <Icon name="copy" className="h-4 w-4" />
+            Copy details
+          </Button>
+        </>
+      }
+    >
+      <dl className="space-y-3 rounded-xl bg-ink-50 p-4 text-sm ring-1 ring-inset ring-ink-200/70">
+        {[
+          ['Sign-in page', `${window.location.origin}/login`],
+          ['Email', details.email],
+          ['Mobile number', details.mobile],
+          ['Password', details.password],
+        ].map(([k, v]) => (
+          <div key={k} className="flex flex-wrap items-baseline justify-between gap-2">
+            <dt className="text-ink-500">{k}</dt>
+            <dd className="break-all font-mono font-medium text-ink-900">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-3 text-xs text-ink-500">The owner can change the password later from the Account page, and add managers, staff, drivers and accounts users from Team.</p>
+    </Modal>
+  )
+}
+
 function PlatformHome() {
   const navigate = useNavigate()
   const toast = useToast()
@@ -211,6 +339,8 @@ function PlatformHome() {
   const [tab, setTab] = useState('pending')
   const [busy, setBusy] = useState(null)
   const [asking, setAsking] = useState(null)
+  const [adding, setAdding] = useState(false)
+  const [details, setDetails] = useState(null)
 
   const load = useCallback(async () => {
     try {
@@ -285,13 +415,19 @@ function PlatformHome() {
       <main className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="font-display text-3xl text-ink-900">Company requests</h1>
-            <p className="mt-1 text-sm text-ink-500">A company can only use PULSE after you approve it. Suspending a company signs all its users out.</p>
+            <h1 className="font-display text-3xl text-ink-900">Companies</h1>
+            <p className="mt-1 text-sm text-ink-500">Approve sign-up requests, or add a company yourself. Suspending a company signs all its users out.</p>
           </div>
-          <Button variant="secondary" size="sm" onClick={load}>
-            <Icon name="refresh" className="h-4 w-4" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" onClick={load}>
+              <Icon name="refresh" className="h-4 w-4" />
+              Refresh
+            </Button>
+            <Button size="sm" onClick={() => setAdding(true)}>
+              <Icon name="plus" className="h-4 w-4" />
+              Add company
+            </Button>
+          </div>
         </div>
         <Tabs
           value={tab}
@@ -319,6 +455,18 @@ function PlatformHome() {
         </ul>
       </main>
       <ReasonModal action={asking} onClose={() => setAsking(null)} onConfirm={(note) => decide(asking.company, asking.status, note)} />
+      <AddCompanyModal
+        open={adding}
+        onClose={() => setAdding(false)}
+        onAdded={(company, login) => {
+          setCompanies((list) => [company, ...(list || [])])
+          setAdding(false)
+          setTab('active')
+          setDetails({ company: company.name, ...login })
+          toast(`${company.name} added and active`)
+        }}
+      />
+      <SignInDetailsModal details={details} onClose={() => setDetails(null)} />
     </div>
   )
 }

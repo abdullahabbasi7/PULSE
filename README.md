@@ -99,7 +99,7 @@ These accounts are created by `seed_demo`. They are fictional companies. Every o
 | Crescent Events, Dubai | owner@crescent-demo.ae | +971 50 000 0001 | Owner |
 | | manager@crescent-demo.ae | +971 50 000 0002 | Manager |
 
-**Platform console** (the PULSE team approves new companies): open `/platform` and sign in with `admin@platform-demo.dev` and the same password. This demo admin is for local use only; on a live server create your own (see below) and never run `seed_demo`.
+**Platform console** (the PULSE team approves new companies): open `/platform` and sign in with `admin@platform-demo.dev` and the same password. The admin can also add a company directly with **Add company**: it is active at once, and the console shows the owner's sign-in details to pass on. This demo admin is for local use only; on a live server create your own (see below) and never run `seed_demo`.
 
 Royal Caterers comes with clients, bookings (two today, one live), stock and staff. Sign in to both companies to show that one company can never see another company's data.
 

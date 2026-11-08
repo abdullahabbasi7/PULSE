@@ -8,14 +8,20 @@ company routes refuse. Company routes' tokens are refused here in turn.
 import uuid
 from datetime import datetime
 from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_platform_admin, get_public_session
-from app.core.security import DUMMY_PASSWORD_HASH, create_platform_token, verify_password
+from app.core.passwords import ensure_strong
+from app.core.security import DUMMY_PASSWORD_HASH, create_platform_token, hash_password, verify_password
+from app.db.session import set_current_company
+from app.models import Company, User
+from app.schemas.common import OptionalPhone, Phone
 
 router = APIRouter(prefix="/platform", tags=["platform"])
 
@@ -69,6 +75,33 @@ class DecisionIn(BaseModel):
     note: str | None = Field(default=None, max_length=500)
 
 
+class CompanyCreateIn(BaseModel):
+    """A company added by a platform admin: it is active at once and its owner can sign in."""
+
+    company_name: str = Field(min_length=2, max_length=120)
+    city: str | None = Field(default=None, max_length=80)
+    timezone: str = Field(default="Asia/Karachi", max_length=64)
+    phone: OptionalPhone = Field(default=None, description="Company phone (optional)")
+    owner_name: str = Field(min_length=2, max_length=120)
+    owner_email: EmailStr
+    owner_mobile: Phone
+    owner_password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("timezone")
+    @classmethod
+    def _real_zone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError):
+            raise ValueError("Choose a time zone from the list.") from None
+        return value
+
+    @model_validator(mode="after")
+    def _strong_password(self) -> "CompanyCreateIn":
+        ensure_strong(self.owner_password, email=str(self.owner_email), full_name=self.owner_name)
+        return self
+
+
 _BAD_LOGIN = "Incorrect email or password."
 
 
@@ -109,6 +142,36 @@ def list_companies(
     with session.begin():
         rows = _companies(session)
     return [r for r in rows if status_filter is None or r.status == status_filter]
+
+
+@router.post("/companies", response_model=CompanyRow, status_code=status.HTTP_201_CREATED)
+def add_company(
+    body: CompanyCreateIn,
+    admin: dict = Depends(get_platform_admin),
+    session: Session = Depends(get_public_session),
+) -> CompanyRow:
+    """Add a company and its owner directly. It is approved at once, so the owner can sign in."""
+    company_id = uuid.uuid4()
+    try:
+        with session.begin():
+            set_current_company(session, company_id)
+            session.add(Company(id=company_id, name=body.company_name.strip(), phone=body.phone or body.owner_mobile,
+                                city=(body.city or "").strip() or None, timezone=body.timezone))
+            session.flush()
+            session.add(User(id=uuid.uuid4(), company_id=company_id, full_name=body.owner_name.strip(),
+                             email=str(body.owner_email).lower(), phone=body.owner_mobile,
+                             password_hash=hash_password(body.owner_password), role="owner"))
+            session.flush()
+            session.execute(
+                text("SELECT platform_set_company_status(:cid, 'active', :note, :admin)"),
+                {"cid": company_id, "note": f"Added by {admin['full_name']}", "admin": admin["id"]},
+            )
+            return next(r for r in _companies(session) if r.id == company_id)
+    except IntegrityError as error:
+        detail = str(error.orig)
+        message = ("An account with this mobile number already exists." if "users_phone_unique" in detail
+                   else "An account with this email already exists.")
+        raise HTTPException(status.HTTP_409_CONFLICT, message) from None
 
 
 @router.post("/companies/{company_id}/decision", response_model=CompanyRow)
