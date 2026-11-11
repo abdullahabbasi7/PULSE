@@ -8,10 +8,16 @@ import { Icon } from '../../layout/icons.jsx'
 // not scroll while it is open.
 export function Modal({ open, onClose, title, description, icon, children, footer, size = 'md', tone = 'brand' }) {
   const panelRef = useRef(null)
+  // Callers usually pass a new onClose function on every render (e.g. an inline arrow).
+  // Keep the latest one in a ref so the open/focus effect below runs only when the
+  // dialog opens or closes — not on every keystroke, which used to pull focus back
+  // to the first field while typing.
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
 
   useEffect(() => {
     if (!open) return undefined
-    const onKey = (event) => event.key === 'Escape' && onClose?.()
+    const onKey = (event) => event.key === 'Escape' && onCloseRef.current?.()
     document.addEventListener('keydown', onKey)
     const previous = document.activeElement
     const overflow = document.body.style.overflow
@@ -22,7 +28,7 @@ export function Modal({ open, onClose, title, description, icon, children, foote
       document.body.style.overflow = overflow
       previous?.focus?.()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
   const width = { sm: 'sm:max-w-md', md: 'sm:max-w-xl', lg: 'sm:max-w-3xl' }[size]
